@@ -1,0 +1,81 @@
+\chapter{Lec 01 - Graph Algorithms I}
+
+\section{Graphs: The basis}
+A graph is a representation of the relationships between \textbf{pairs} of objects. We denote a graph as follows:
+\[G = (V, E)\]
+where $V$ is a \textbf{set} of vertices (nodes) and $E$ is a collection of edges. An edge is a pair of vertices $(u, v)$ which indicates the connection between the two nodes.
+\begin{itemize}
+    \item if $(u, v) = (v, u)$ the graph is \textbf{undirected}
+    \item if $(u, v) \neq (v, u)$ the graph is \textbf{directed}
+\end{itemize}
+In directed graphs an edge is usually called \textit{"arc"}.
+
+Examples of real-world graphs are:
+\begin{itemize}
+    \item Road networks: $(Cities, Roads)$
+    \item Computer networks (e.g. internet): $(Computers, connections)$
+    \item World Wide Web: $(Web pages, hyperlinks)$
+    \item Social networks: $(People, friendship \,\, connections)$
+\end{itemize}
+
+\section{Terminology}
+\begin{itemize}
+    \item Given an edge $e = (u, v)$, $e$ is \textbf{incident} on $u$ and $v$, while $u, v$ are \textbf{adjacent}.
+
+    \item The \textbf{neighbors} of a vertex $u$ are all the vertices $v$ such that $(u, v) \in E$. 
+
+    \item The \textbf{degree} of a vertex $d(v)$ is the number of edges incident on $v$.
+\end{itemize}
+
+\section{Concepts}
+\begin{itemize}
+    \item \textbf{Simple path}: A sequence of nodes $v_{1}, v_{2}, ..., v_{k}$ all distinct such that $(v_{i}, v_{i + 1}) \in E \,\, \forall 1 \leq i < k$. Having all distinct nodes makes the path a simple path. 
+
+    \item \textbf{Cycle}: is a path such that $v_{1} = v_{k}$
+
+    \item \textbf{Sub-graph:} $G' = (V', E')$ such that $V' \subseteq V, \,\, E' \subseteq E$ and the edges of $E'$ are incident only on $V'$.
+
+    \item \textbf{Spanning sub-graph:} a sub-graph with $V' = V$
+
+    \item \textbf{Connected graph:} a graph is connected if $\forall u, v \in V$ it exists a path from $u$ to $v$.
+
+    \item \textbf{Connected components:} a partition of $G$ in sub-graphs $G_{i} = (V_{i}, E_{i})$ such that $\forall 1 \leq i < k$ 
+    \begin{itemize}
+        \item $G_{i}$ is connected.
+        \item $V$ = $V_{1} \cup V_{2} \cup ... \cup V_{k}$
+        \item $E = E_{1} \cup E_{2} \cup... \cup E_{k}$
+        \item $\forall i \neq j$ there is no edge between $V_{i}$ and $V_{j}$
+    \end{itemize}
+    If $G$ is connected, then $k = 1$.
+
+    \item \textbf{Tree:} connected graph without cycles.
+
+    \item \textbf{Forest:} set of trees (disjoint)
+
+    \item \textbf{Spanning tree:} a spanning connected sub-graph without cycles (it exists only if $G$ is connected).
+
+    \item \textbf{Spanning forest:} a spanning sub-graph without cycles.
+\end{itemize}
+
+\section{Basic problems}
+\begin{itemize}
+    \item Traversal
+    \item Connectivity (tell if the graph is connected or not)
+    \item Compute connected components
+    \item Minimum-weight spanning trees
+    \item Shortest paths
+    \item ...
+\end{itemize}
+
+\section{Notations and Properties}
+\begin{itemize}
+    \item $n = |V|$
+    \item $m = |E|$
+    \item The \textbf{size} of the graph is given by $n + m$
+    \item $\sum_{v \in V}d(v) = 2m$ because in the summation every edge counts twice.
+    \item $m \leq \binom{n}{2}$
+    \item if $G$ is a tree $m = n - 1$ because, fixed a root, $E$ represents father-child similarities, which are $n - 1$.
+    \item if $G$ is connected $m \geq n - 1$ because $G$ is a \textit{"tree"} that may have cycles, thus it can only have more edges.
+    \item if $G$ is acyclic $m \leq n - 1$ because $G$ is a tree that may not be connected, thus it can only have less edges.
+\end{itemize}
+

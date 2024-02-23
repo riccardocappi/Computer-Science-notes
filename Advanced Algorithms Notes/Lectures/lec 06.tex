@@ -1,0 +1,145 @@
+\chapter{Lec 06 - Efficient Kruskal \& Union-Find}
+
+\section{Efficient Kruskal}
+In the Kruskal's algorithm the operation repeated many times is the cycle-checking when an edge is added to $A$. This operation can be speeded up by using a data structure called \textbf{Union-Find}. Union-Find is a data structure to merge disjoint set of objects. It implements the following operations:
+\begin{itemize}
+    \item \textbf{Init:} Given an array $X$ of objects, it creates a Union-Find data structure with each object $x \in X$ in its own set.
+
+    \item \textbf{Find:} Given an object $x$, it returns the name of the set that contains $x$.
+
+    \item \textbf{Union:} Given two objects $x, y$, it merges the sets that contain $x$ and $y$ into a single set (if $x$ and $y$ are already in the same set, it does nothing).
+\end{itemize}
+These operations can be implemented with the following complexities:
+\begin{itemize}
+    \item Init: $O(n)$
+    \item Find: $O(log\,n)$
+    \item Union: $O(log\, n)$
+\end{itemize}
+The idea of the efficient implementation of Kruskal's algorithm is to use Union-Find to keep track of the connected components of the solution. $A \cup \{(v, w)\}$ creates a cycle iff $v, w$ are already in the same connected components.
+\begin{algorithm}
+\caption{Kruskal}\label{kruskal}
+    \begin{algorithmic}[1]
+    \Procedure{Kruskal ($G$)}{}
+        \State $A = \emptyset$
+        \State $U = \text{init}(V)$
+        \State Sort edges of $G$ by weight
+        \For{edge $e = (v, w)$ in non-decreasing order}
+            \If{Find($v$) $\neq$ Find($w$)}
+                \State $A = A \cup \{(v, w)\}$
+                \State Union($v, w$)
+            \EndIf
+        \EndFor
+        \Return $A$
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+Let's analyze the complexity of the algorithm:
+\begin{itemize}
+    \item Init: $O(n)$
+    \item Sorting: $O(m\,log\,n)$
+    \item Loop:
+    \begin{itemize}
+        \item $2m$ Find: $O(m\,log\,n)$
+        \item $n-1$ Union: $O(n \, log\,n)$
+        \item Updating $A$: $O(n)$
+    \end{itemize}
+\end{itemize}
+The total complexity is $O(m \, log\, n)$.
+
+\section{Union-Find implementation}
+We'll use an array, which can be visualized as a set of \textbf{directed trees}. Each element of the array has a field $parent(x)$ that contains the index in the array of some object $y$.\newline\newline
+\begin{tabular}{c|c}
+    index of $x$ & $parent(x)$  \\
+    \hline\\
+     1 & 4\\
+     2 & 1\\
+     3 & 1\\
+     4 & 4\\
+     5 & 6\\
+     6 & 6\\
+\end{tabular}\newline\newline
+
+\begin{tikzpicture}[node distance={15mm}, thick, main/.style = {draw, circle}, edge/.style = {->,> = latex'}]
+            \node[main] (1) {$1$}; 
+            \node[main] (2) [below right of=1] {$2$}; 
+            \node[main] (3) [below left of=1] {$3$}; 
+            \node[main] (4) [right of=1] {$4$};
+            \node[main] (6) [right of=4] {$6$};
+            \node[main] (5) [below of=6] {$5$};
+            
+
+            \draw[edge] (2) to (1);
+            \draw[edge] (3) to (1);
+            \draw[edge] (1) to (4);
+            \draw[edge][loop above] (4) to (4);
+            \draw[edge] (5) to (6);
+            \draw[edge][loop above] (6) to (6);
+\end{tikzpicture}\newline\newline
+This is called \textit{parent graph}. The name of the parent graph has the name of the root.
+\begin{itemize}
+    \item \textbf{Init}:\newline\newline
+    \begin{tikzpicture}[node distance={15mm}, thick, main/.style = {draw, circle}, edge/.style = {->,> = latex'}]
+                \node[main] (1) {$1$}; 
+                \node[main] (2) [right of=1] {$2$}; 
+                \node[main] (3) [right of=2] {$3$}; 
+                \node[main] (n) [right of=3] {$n$};
+                
+                \draw[edge][loop above] (1) to (1);
+                \draw[edge][loop above] (2) to (2);
+                \draw[edge][loop above] (3) to (3);
+                \path (3) to node {\dots} (n);
+                \draw[edge][loop above] (n) to (n);
+    \end{tikzpicture}
+
+    \item \textbf{Find}: It follows parent by parent until the root is reached $parent \rightarrow parent \rightarrow  ... \rightarrow root$.\newline\newline
+    $find(x):$
+    \begin{enumerate}
+        \item Starting from the position of $x$ in the array, traverse parent edges until reaching a position $j$ such that $parent(j) = j$.
+
+        \item Return $j$
+    \end{enumerate}
+    \textbf{Definition:} The \textbf{depth} of an object $x$ is the number of edges traversed by $find(x)$.\newline
+    \textbf{Examples:}
+    \begin{itemize}
+        \item $depth(4) = 0$
+        \item $depth(1) = 1$
+        \item $depth(2) = 2$
+    \end{itemize}
+    The complexity of $find(x)$ is the largest depth of $x$, it depends on the Union implementation.
+
+    \item \textbf{Union:} Given two objects $x, y$, the two trees of the parent graph containing $x$ and $y$ must be merged in a single tree. The simplest way is to point one of the two roots to another node of the other tree. However, this implementation is not smart since it produces \textbf{unbalanced} trees.\newline\newline
+    In order to implement in an efficient way the Union operation, we need to decide two things:
+    \begin{enumerate}
+        \item Which of the two roots remains a root.
+        \item To which node should a root point.
+    \end{enumerate}
+    In order to have the minimum increasing in depth, a root must always point to the other root. For what concerning the point 1), there are two alternatives:
+    \begin{itemize}
+        \item \textit{Union-by-size}: It minimizes the number of objects whose depth increases.
+
+        \item \textit{Union-by-rank}: The root of the less tall tree points to the tallest tree.
+    \end{itemize}
+    We'll use the \textit{Union-by-size} implementation.
+    \begin{algorithm}
+    \caption{Union}\label{union}
+        \begin{algorithmic}[1]
+        \Procedure{Union ($x, y$)}{}
+            \State $i = \text{Find}(x)$
+            \State $j = \text{Find}(y)$
+            \If{$i = j$}
+                \Return
+            \EndIf
+            \If{size($i$) $\geq$ size($j$)}
+                \State $parent(j) = i$
+                \State size($i$) = size($i$) + size($j$)
+            \Else
+                \State $parent(i) = j$
+                \State size($j$) = size($i$) + size($j$)
+            \EndIf
+        \EndProcedure
+        \end{algorithmic}
+    \end{algorithm}
+\end{itemize}
+The complexity of Find and Union is $O(log\,n)$.\newline\newline
+\textbf{Proof:}\newline
+Initially, $depth(x) = 0 \,\, \forall x$. $depth(x)$ can only increase because of a union in which the root of the tree of $x$ points to another root. This happens only when the tree of $x$ gets merged to a tree of size not smaller. Therefore, when the depth of $x$ increases, the size of the tree of $x$ at least doubles. This can happen at most $log_{2} n$ times.

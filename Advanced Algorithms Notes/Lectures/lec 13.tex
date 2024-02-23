@@ -1,0 +1,94 @@
+\chapter{Lec 13 - Approximation Algorithms}
+
+\section{Approximation Algorithms}
+\begin{itemize}
+    \item \textbf{Optimization problem:}
+    \[\Pi: I \times S\]
+    where $I$ is the set of input and $S$ is the set of the solutions.
+
+    \item \textbf{Cost function:}
+    \[c: S \rightarrow \mathbb{R}^+\]
+    the cost function $c$ maps each solution to a real number.
+
+    \item \textbf{Set of feasible solutions:}
+    \[\forall i \in I \,\, S(i) = \{s \in S: i\Pi_s\}\]
+    The best solution $s^*$ for a minimization (maximization) problem is defined as follows:
+    \[s^* \in S(i) \,\, \text{and} \,\, c(s^*) = min \{c(S(i))\}\]
+\end{itemize}
+
+\subsection{Approximation}
+Given a feasible solution $s \in S(i)$, with $s \neq s^*$, we want:
+\begin{enumerate}
+    \item guarantee on the \textit{quality} of $s$
+    \item guarantee on the complexity: Polynomial-time algorithm
+\end{enumerate}
+\textbf{Definition:} Let $\Pi$ be an optimization problem, and let $A_\Pi$ an algorithm for $\Pi$ that returns , $\forall i \in I$, $A_\Pi (i) \in S(i)$. We say that $A_\Pi$ has an \textbf{approximation factor} of $\rho(n)$ if $\forall i \in I$ such that $|i| = n$, we have 
+\begin{itemize}
+    \item minimization problem:
+    \[\frac{c(A_\Pi(i))}{c(s^*(i))} \leq \rho(n)\]
+
+    \item maximization problem:
+    \[\frac{c(s^*(i))}{c(A_\Pi(i))} \leq \rho(n)\]
+\end{itemize}
+we assume that $c$ maps each feasible solution to a real number $\geq 1$.\newline\newline
+The goal is to have an algorithm such that $\rho(n) = 1 + \epsilon$ with $\epsilon$ as small as possible. We'll get:
+\begin{itemize}
+    \item $\epsilon = 1$ for the vertex cover problem.
+    \item $\epsilon = log_2n$ for the set cover problem. 
+\end{itemize}
+when we have an approximation algorithm with an approximation factor of 2 it is called \textbf{2-approximation algorithm}\newline\newline
+There exists problems for which we can prove that $\rho(n) = \Omega(n^\epsilon)$ (not smaller than $n^\epsilon$) $\forall \epsilon < 1$ (e.g. clique).\newline\newline
+\textbf{Definition:} An \textbf{approximation scheme} for $\Pi$ is an algorithm with 2 inputs $A_\Pi(i, \epsilon)$, that for all $\epsilon$ is a $(1 + \epsilon)$-approximation algorithm. In this case we just have to choose \textit{how much approximation} we want by tuning the value of $\epsilon$.\newline\newline
+\textbf{Definition:} An approximation scheme is \textbf{polynomial} (PTAS) if $A_\Pi(i, \epsilon)$ is polynomial in $|i| \,\, \forall \epsilon$ fixed. The smaller the value of $\epsilon$, the longer will take the computation (but still polynomial).
+
+\section{Approximation Algorithm for Vertex Cover}
+\textbf{Vertex Cover:} A vertex cover is a set of vertices that includes at least one endpoint of every edge of the graph.\newline\newline
+\textbf{Minimum vertex cover problem:} Compute the smallest vertex cover in a given graph.\newline\newline
+The first simple idea for a greedy approximation algorithm can be the following:
+\begin{enumerate}
+    \item Select the vertex with highest degree
+    \item Remove the \textit{touched} edges
+    \item Repeat
+\end{enumerate}
+Unfortunately, it can be proved that for this algorithm $\rho(n) = \Omega(log\,n)$.\newline\newline
+Let's try a new greedy approach:
+\begin{enumerate}
+    \item Choose any edge
+    \item Add its endpoints to the solution
+    \item Remove all the touched edges
+    \item Repeat
+\end{enumerate}
+We'll show that this is a 2-approximation algorithm.
+
+\begin{algorithm}
+\caption{Approx\_Vertex\_Cover}\label{Approx_Vertex_Cover}
+    \begin{algorithmic}[1]
+    \Procedure{Approx\_Vertex\_Cover($G$)}{}
+        \State $V' = \emptyset$
+        \State $E' = E$
+        \While{$E' \neq \emptyset$}
+            \State Let $(u, v)$ be an arbitrary edge of $E'$
+            \State $V' = V' \cup \{u, v\}$
+            \State $E' = E' \setminus \{(u, z), (v, w)\} \quad \text{// remove the edges that have $u$ and $v$ as endpoints}$
+        \EndWhile
+        \Return $V'$
+    \EndProcedure   
+\end{algorithmic}
+\end{algorithm}
+\textbf{Complexity:} The complexity of the algorithm is $O(n + m)$
+
+\subsection{Analysis}
+We'll prove that \textit{Approx\_Vertex\_Cover} is a 2-approximation algorithm. In order to do that, we show that:
+\[\frac{|V'|}{|V^*|} \leq 2\]
+\textbf{Proof:}\newline
+Let $A$ be the set of selected edges \footnote{first instruction in the while loop}. $A$ is a matching: $\forall e, e' \in A \Rightarrow e \cap e' = \emptyset$, that is, there are no vertices in common among the edges in $A$.\newline\newline
+\textit{Approx\_Vertex\_Cover} selects a \textbf{maximal} matching, that is, $\forall\, \text{edge } y, \,\, A \cup y$ is not a matching \footnote{Note that maximal $\neq$ maximum}.\newline\newline
+We can observe that:
+\begin{enumerate}
+    \item $|V^*| \geq |A|$. Because $A$ is a matching, and in $V^*$ there must be at least one vertex for each edge in $A$.
+
+    \item $|V'| = 2|A|$ by construction.
+\end{enumerate}
+Then, $|V'| \leq 2|A| \leq 2|V^*|$. This implies that:
+\[\frac{|V'|}{|V^*|} \leq 2\]
+

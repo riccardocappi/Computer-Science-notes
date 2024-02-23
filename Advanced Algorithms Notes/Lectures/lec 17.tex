@@ -1,0 +1,99 @@
+\chapter{Lec 17 - Set Cover}
+
+\section{Set cover}
+The set-covering problem is an optimization problem that models many problems that require resources to be allocated. An instance $I = (X, F)$ of the set-covering problem consists of a finite set $X$ and a family $F$ of subsets of $X$, such that every element of $X$ belongs to at least one subset in $F$ (i.e. $F$ covers $X$):
+\[X = \bigcup_{S \in F}S\]
+\begin{itemize}
+    \item $X$ set of objects/elements usually called \textit{universe}.
+
+    \item $F \subseteq \{S : S \subseteq X\}$
+\end{itemize}
+The problem is to find a \textbf{minimum-size} subset $F' \subseteq F$ whose members cover all of $X$.\newline\newline
+\textbf{Example:}
+\begin{itemize}
+    \item $X = \{1,2,3,4,5\}$
+    \item  $F = \{\{1,2,3\}, \{2,4\}, \{3,4\}, \{4,5\}\}$
+    \item  $F' = \{\{1,2,3\}, \{4,5\}\}$
+\end{itemize}
+The set-covering problem abstracts many commonly arising combinatorial problems. As a simple example, suppose that $X$ represents a set of skills that are needed to solve a problem and that we have a given set of people available to work on the problem. We wish to form a committee, containing as few people as possible, such that for every requisite skill in $X$, at least one member of the committee has that skill. In the decision version of the set-covering problem, we ask whether a covering exists with size at most $k$, where $k$ is an additional parameter specified in the problem instance.\newline\newline
+Set cover in its decision version is \textbf{NP-Hard}:\newline\newline
+\textbf{Proof:} Reduction from Vertex cover. Given an instance of Vertex cover Problem $<G=(V,E), k>$, we create an instance of Set cover problem $<(X, F), k>$ where
+\begin{itemize}
+    \item $X = E$.
+    \item $F = \{S_1, S_2, ..., S_n\}$ one $\forall v \in V$ from 1 to $n$.
+    \item $S_i = \{e = (u, v)$ such that $u=i$ or $v=i\}$
+\end{itemize}
+Basically, there are $|V| = n$ subsets $S_i$, and each subset is the set of edges incident to vertex $i$.\newline\newline
+Claim: Finding a set cover of size $k$ $\iff$ finding a vertex cover of size $k$.
+\begin{itemize}
+    \item $\Rightarrow$ Suppose $\{S_1, S_2, ..., S_k\}$ is a set cover for $X$. Then, every edge in $E$ must be incident to at least one vertex $u1, ..., u_k$. Therefore, it forms a vertex cover of size $k$ in $G$.
+
+    \item  $\Leftarrow$ Suppose $u_1, ..., u_k$ is a vertex cover in $G$. Then, $S_i$ covers all the edges incident to vertex $u_i$. Therefore, $\{S_1, ..., S_k\}$ is a set cover of size $k$ for $X$.
+\end{itemize}
+
+\section{Approximation algorithm: greedy approach}
+The greedy method works by picking, at each stage, the set $S$ that covers the greatest number of remaining elements that are uncovered:
+\begin{itemize}
+    \item Choose the subset that contains the largest number of uncovered elements.
+
+    \item  Remove from $X$ those elements.
+
+    \item  Repeat.
+\end{itemize}
+\begin{algorithm}
+\caption{APPROX\_SET\_COVER}\label{APPROXSETCOVER}
+    \begin{algorithmic}[1]
+    \Procedure{APPROX\_SET\_COVER($X, F$)}{}
+        \State $U = X$
+        \State $F' = \emptyset$
+        \While{$U \neq \emptyset$}
+            \State let $S \in F = max_{S' \in F}\{|S' \cap U|\}$
+            \State $U = U \setminus S$
+            \State $F = F \setminus \{S\}$
+            \State $F' = F' \cup \{S\}$
+        \EndWhile
+        \Return $F'$
+    \EndProcedure   
+    \end{algorithmic}
+\end{algorithm}
+\textbf{Correctness:} At every iteration $|U|$ decreases by at least one\newline\newline
+\textbf{Complexity:} Since the number of iterations of the loop is bounded from above by $min\{|X|, |F|\}$, and we can implement the loop body to run in time $O(|X|\,|F|)$, a simple implementation runs in time $O(|X|\,|F|\,min\{|X|, |F|\})$. It can be at most cubic in the input size (with the right data structure can be implemented in $O(|X| + |F|)$, i.e. in linear time).
+
+\section{Analysis}
+Let $|F^*|$ be the size of the optimal solution. We'll show that:
+\[\frac{|F'|}{|F^*|} \leq (log_2\,n) + 1\]
+where $n = |X|$.\newline\newline
+\textbf{Property:} if $(X, F)$ admits a cover with $|F| \leq k$, then $\forall X' \subseteq X$ $(X', F)$ admits a cover with $|F| \leq k$.\newline\newline
+\textbf{Idea:} Try to bound the number of iterations such that the set of remaining elements gets empty.
+\begin{itemize}
+    \item $U_0 = X$.
+    \item $U_i = $ residual universe at the end of the i-th iteration.
+    \item  $|F^*| = k$ unknown.
+\end{itemize}
+\textbf{Lemma:} After the first $k$ iterations the residual universe is at least halved, that is $|U_k| \leq \frac{n}{2}$.\newline\newline
+\textbf{Proof:} $U_k \subseteq X \Rightarrow $ $U_k$ admits a cover size $\leq k$, all in $F$, i.e. not selected by the algorithm (by the property above). Let $T_1, T_2,..., T_k \in F$ be those sets, where $\bigcup T_i$ covers $U_k$.\newline\newline
+We apply the \textbf{pigeonhole} principle: given a set of elements where there is an order relation, there is always at least one element whose value is greater than the mean value\footnote{Given a shelter for pigeons with $n$ nests, if there are $n+1$ pigeons it means that at least one nest is occupied by two pigeons.}:
+\[\exists \Bar{T} : |U_k \cap \Bar{T}| \geq \frac{|U_k|}{k}\]
+We'll now show that in the first $k$ iterations, for each iteration $\frac{|U_k|}{k}$ elements get covered:\newline\newline
+$\forall 1 \leq i \leq k$, let $S_i \in F$ the selected subset by the algorithm. This subset has the following property:
+\[|S_i \cap U_i| \geq |T_j \cap U_i| \forall 1 \leq j \leq k\]
+This is true because at each interaction I select the set with largest cardinality. This property is valid also for $\Bar{T}$. Then:
+\[|S_i \cap U_i| \geq |\Bar{T} \cap U_i| \geq |\Bar{T} \cap U_k| \geq \frac{|U_k|}{k}\]
+Thus, after the first $k$ iterations the algorithm covered at least $\frac{|U_k|}{k}k = |U_k|$ elements. Since $U_k$ is the set of elements not selected by the algorithm after $k$ iterations, it follows that:
+\begin{equation}
+    \begin{split}
+       |U_k| & \leq n - |U_k|\\
+       |U_k| & \leq \frac{n}{2}
+    \end{split}
+\end{equation}
+We can use the lemma to prove the approximation factor of the algorithm. Since it is a greedy algorithm, we can see it as a recursive algorithm that chooses a subset and then iterates recursively on the residual universe:
+\begin{itemize}
+    \item After the first $k$ iterations, the residual universe is at least halved:
+    \[|U_k| \leq \frac{n}{2}\]
+
+    \item After $k \cdot i$ iterations:
+    \[|U_{k \cdot i}| \leq \frac{n}{2^i}\]
+\end{itemize}
+Then, the number of necessary iterations is $(log_2\,n)k + 1 $ (the +1 is used to cover any last element that remains to be covered).\newline\newline
+$\Rightarrow |F'| \leq (log_2\,n)|F^*| + 1$ (because at every iteration $|F'|$ is increased by one).
+

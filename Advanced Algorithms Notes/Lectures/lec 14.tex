@@ -1,0 +1,50 @@
+\chapter{Lec 14 -TSP \& Metric TSP}
+\section{Travelling Salesperson Problem}
+Given a complete, undirected graph and a function $w: E \rightarrow \mathbb{R}^+$, output a \textbf{tour} (i.e. a cycle that visits every vertex exactly once)
+\[T \subseteq E \quad \text{minimizing }\sum_{e \in T}w(e)\]
+To date, no one knows a polynomial algorithm to solve it.\newline\newline
+We'll work only with positive edges, that is, $w: E \rightarrow \mathbb{R}^+$. We can do this without loss of generality because every TSP tour has the same number of edges. Then, we can add a large weight to each edge, such that edges have non-negative weights.\newline\newline
+\textbf{Theorem:} For any function $\rho(n)$ that can be computed in polynomial time in $n$, there is no polynomial time $\rho(n)$-approximation algorithm for TSP (unless $\textbf{P} = \textbf{NP}$).\newline\newline
+\textbf{Proof:} The proof is by contradiction. Suppose to the contrary that for some number $\rho \geq 1$, there is a polynomial-time approximation algorithm $A$ with approximation ratio $\rho$. We shall then show how to use $A$ to solve instances of the Hamiltonian cycle problem in polynomial time. Since Hamiltonian circuit problem is $\textbf{NP-Hard}$, if we can solve it in polynomial time, then $\textbf{P} = \textbf{NP}$.\newline\newline
+Given $n = |V|$, build a reduction from Hamiltonian Circuit:
+\begin{itemize}
+    \item $G \rightarrow G' = (V, E')$ complete
+    \item $w(e \in E') = \begin{cases}
+                            1 & e \in E\\
+                            \rho n + 1 & \text{otherwise}
+                         \end{cases}$
+\end{itemize}
+\begin{enumerate}
+    \item if $G$ has an Hamiltonian circuit, the cost of an optimal TSP solution in $G'$ is $n$.
+
+    \item if $G$ has not an Hamiltonian circuit, then any tour of $G'$ must use some edge not in $E$. In this case, the cost of an optimal TSP solution in $G'$ is at least:
+    \[(\rho n + 1) + (n - 1) = \rho n + n > \rho n\]
+\end{enumerate}
+Note that there is a gap of at least $\rho n$ between the cost
+of a tour that is a Hamiltonian cycle in G (cost $n$) and the cost of any other tour (cost at least $\rho n + n$).\newline\newline
+Now, suppose that we apply the approximation algorithm $A$ on $G'$. Because $A$ is guaranteed to return a tour of cost no more than $\rho$ times the cost of an optimal tour, if $G$ contains a Hamiltonian cycle, then $A$ must return it. If $G$ has no Hamiltonian cycle, then $A$ returns a tour of cost more than $\rho n$. Therefore, we can use $A$ to solve the Hamiltonian-cycle problem in polynomial time.
+
+
+\section{Metric TSP}
+\textbf{Metric TSP} is a special case of TSP where the weight function $w$ satisfies the triangle inequality:
+\[\forall \, u, v, z \in V, \,\, \text{it holds that } w(u, v) \leq w(u, z) + w(z,v)\]
+The path from $u$ to $v$ is shorter than any other path that passes through another vertex.\newline\newline
+\textbf{Theorem:} Metric TSP is \textbf{NP-Hard}.\newline\newline
+\textbf{Proof:} TSP $<_p$ Metric TSP.\newline
+Given an instance of the TSP problem $<G=(V,E), w, k>$, we build an instance of Metric TSP $<G'=(V,E), w', k'>$ such that the triangle inequality is satisfied in $G'$. In order to to this, we can define the weight function $w'$ as follows:
+\[w'(u, v) = w(u, v) + W\]
+where $W = max_{u, v \in V}\{w(u, v)\}$.\newline\newline
+We need to prove 2 thing:
+\begin{enumerate}
+    \item the new definition of $w'$ satisfies triangle inequality:\newline\newline
+    Let $u, v, z$ be vertices. Then we have $w'(u, v) = w(u, v) + W \leq 2W \leq w(u,z) + W + w(z, v) + W$. Note that it’s important that the weights of edges are non-negative.
+
+
+    \item $\exists$ a Hamiltonian circuit of cost $k$ in $G$ $\iff$ $\exists$ a Hamiltonian circuit of cost $k'$ in $G'$:
+    \begin{itemize}
+        \item $\Rightarrow$ Assume that exists a Hamiltonian circuit of cost $k$ in $G$. Note that an optimal solution contains exactly $n$ edges. The same circuit in $G'$ introduces a $+W$ $\forall \, edge$. Thus, the cost of the tour in $G'$ is $k + nW$.
+
+        \item  $\Leftarrow$ Just remove the $+W$ $\forall \, edge$ to obtain a Hamiltonian circuit of cost $k$ in $G$.
+    \end{itemize}
+\end{enumerate}
+

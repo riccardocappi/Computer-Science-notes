@@ -1,0 +1,84 @@
+\chapter{Lec 04 - Minimum Spanning Tree}
+
+\section{Minimum Spanning Tree (MST)}
+\textbf{Definition:}\newline
+\begin{itemize}
+    \item \textbf{Input:} A graph $G = (V, E)$ undirected, connected, weighted. A weight $w(u, v)$ defines the cost of an edge ($w: E \rightarrow \mathbb{R}$)
+
+    \item \textbf{Output:} A spanning tree $T \subseteq E$ such that $W(T) = \sum_{(u,v) \in T}w(u, v)$ is minimized.
+\end{itemize}
+
+Applications of MST are:
+\begin{itemize}
+    \item Networks (computers, sensors, electrical)
+    \item Machine Learning (clustering algorithms)
+    \item Computer vision (object detection)
+    \item Data mining
+    \item Subroutine in other algorithms (approximation algorithms)
+\end{itemize}
+The simplest MST algorithm is to compute all the spanning trees and select the one with minimum weight. This solution is not possible because the so called \textbf{complete graph}, which is a graph that contains all the $\binom{n}{2}$ possible edges, has $n^{n-2}$ different spanning trees. Then, the algorithm would be exponential in the worst case. \newline\newline
+However, MST can be solved in near-linear time using \textbf{greedy algorithms}. We'll see two algorithms that deal with this problem:
+\begin{itemize}
+    \item Prim's algorithm
+    \item Kruskal algorithm
+\end{itemize}
+They both apply, in different ways, a \textbf{generic greedy algorithm}.
+
+\section{Generic greedy algorithm}
+The idea of a generic-MST algorithm is to maintain the following invariant: At each iteration, $A$ is always a subset of edges of some MST. Basically, at each iteration, the algorithm adds an edge that does not violate the invariant (i.e. \textit{safe edge} for $A$).\newline\newline
+
+\textbf{Terminology:}
+\begin{itemize}
+    \item A \textbf{cut} of a graph $G = (V, E)$ is a partition of the set of vertices. It is usually denoted as $(S, V \setminus S)$.
+
+    \item An edge $(u, v) \in E$ \textbf{crosses} a cut $(S, V \setminus S)$ if $u \in S$ and $v \in V \setminus S$.
+
+    \item A cut \textbf{respects} a set of edges $A$ if no edge of $A$ crosses the cut.
+
+    \item Given a cut, an edge that crosses the cut and is of minimum weight is called \textbf{light-edge}.
+    
+\end{itemize}
+
+\begin{algorithm}
+\caption{Generic MST}\label{Gen.MST}
+    \begin{algorithmic}[1]
+    \Procedure{Generic-MST ($G$)}{}
+        \State $A = \emptyset$
+        \While{$A$ does not form a spanning tree}
+            \State find an edge $(u, v)$ that is safe for $A$
+        \EndWhile
+        \Return $A$
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+How can we find a \textit{safe edge} ? Luckily, MSTs enjoy the following structural property:\newline\newline
+\textbf{Theorem:} Let $G=(V, E)$ be an undirected, connected and weighted graph. Let $A$ be a subset of $E$ included in some MST of $G$. Let $(S, V \setminus S)$ a cut that respects $A$. Let $(u, v)$ be a light-edge for $(S, V \setminus S)$. Then, $u, v$ is safe for $A$.\newline\newline
+\textbf{Termination}: All edges added to $A$ are in a minimum spanning tree, and so the set $A$ must be a minimum spanning tree.\newline\newline
+Basically we can iteratively select a cut that respects $A$ and add to $A$ a light-edge according to the cut. Prim and Kruskal algorithms define how to choose a cut.\newline\newline
+\textbf{Proof of the theorem:}\newline
+Let $T$ be an MST that includes $A$. Assume that $(u, v) \notin T$. We'll build a new MST $T'$ that includes $A \cup \{(u, v)\}$. This would imply that the edge $(u, v)$ is safe for $A$, and the theorem would be demonstrated. By hypothesis, $(u, v)$ crosses the cut $(S, V \setminus S)$. This implies that there exists another edge that crosses $(S, V \setminus S)$. This is because $(u, v) \notin T$, so if no other edge crosses the cut it would mean that $G$ is not connected, which is false by hypothesis. Let $(x, y)$ be such edge. By hypothesis $(S, V \setminus S)$ respects $A$, therefore $(x, y) \notin A$. This implies that by removing $(x,y)$ from $T$ and adding $(u, v)$ we obtain a new spanning tree $T' = T \setminus \{(x, y)\} \cup \{(u, v)\}$ that includes $A \cup \{(u, v)\}$.
+
+Now we need to show that $T'$ not only is a spanning tree, but also a MST. Both $(x, y)$ and $(u, v)$ cross $(S, V \setminus S)$, but by hypothesis $(u, v)$ is a light-edge. This implies that $w(u, v) \leq w(x, y) \rightarrow w(T') = w(T) - w(x, y) + w(u, v) \leq w(T)$. Since $T$ is a MST by hypothesis, it follows that $w(T') = w(T)$.
+
+\section{Prim's alorithm}
+Prim's algorithm applies the Generic-MST in the following way:\newpage
+\begin{algorithm}
+\caption{Prim}\label{Prim}
+    \begin{algorithmic}[1]
+    \Procedure{Prim ($G, s$)}{}
+        \State $X = \{s\}$
+        \State $A = \emptyset$
+        \While{There is an edge $(u, v)$ with $u \in X$ and $v \notin X$}
+            \State $(u^{*}, v^{*})=$ a minimum weight such edge
+            \State add $v^{*}$ to $X$
+            \State add $(u^{*}, v^{*})$ to $A$
+        \EndWhile
+        \Return $A$
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+This algorithm \textit{grows} a spanning tree from a source vertex $s$ by adding an edge at a time.
+\begin{itemize}
+    \item \textbf{Correctness:} it follows from the theorem
+    \item \textbf{Complexity:} assume the $G$ is represented with an adjacency list, the complexity is $O(m \cdot n)$, which is polynomial time. Therefore, Prim's algorithm is an efficient algorithm.
+\end{itemize}

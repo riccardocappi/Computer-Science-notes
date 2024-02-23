@@ -1,0 +1,109 @@
+\chapter{Lec 07 - Shortest Path}
+
+\section{Definitions and Terminology}
+\begin{itemize}
+    \item Given a weighted graph, the \textbf{length} of a path $p = v_1, v_2, ..., v_k$ is defined as $len(P)=\sum_{i=1}^{k-1}w(v_i, v_{i+1})$
+
+    \item A \textbf{shortest path} from a vertex $u$ to vertex $v$ is a path with minimum length among all $u-v$ paths.
+
+    \item The \textbf{distance} between 2 vertices $s$ and $t$, denoted as $dist(s, t)$ is the length of a shortest path from $s$ to $t$. If there is no path at all from $s$ to $t$, then $dist(s, t) = \infty$
+\end{itemize}
+
+\section{Problem: Shortest Path}
+Given a directed, weighted graph, a source vertex $s \in V$ and a destination $t \in V$, compute the shortest path from $s$ to $t$\footnote{In directed graph, in general, $dist(u, v) \neq dist(v, u)$}.\newline\newline
+\textbf{Applications:}
+\begin{itemize}
+    \item Road networks (Google maps)
+    \item Routing in computer networks (e.g. internet)
+    \item ...
+\end{itemize}
+
+\section{Single-Source Shortest Paths (SSSP)}
+Description of the problem:
+\begin{itemize}
+    \item \textbf{input:} A directed, weighted graph $G$ with edge weights $w: E \rightarrow \mathbb{R}$ and a source vertex $s \in V$
+
+    \item \textbf{output:} $dist(s, v) \,\, \forall v \in V$
+\end{itemize}
+Observations:
+\begin{itemize}
+    \item No algorithms are known that run asymptotically faster than the best SSSP algorithm in the worst case.
+
+    \item We'll work with \textbf{directed} graphs, but all the algorithms that we'll see can be adapted easily for undirected graphs 
+\end{itemize}
+\subsection{Special case: non-negative edge weights}
+We've already solved a special case of this special case, that is, when all the weights are $w = 1$ it can be solved in linear time using BFS.\newline\newline
+Can we modify BFS in order to deal also with weights greater that 1 ? A first simple solution can be to replace and edge with weight $w = n$ with $n$ edges of weight $w = 1$. However, with this implementation, the size of the transformed graph can be much bigger than the size of the starting graph and the complexity can grow exponentially.\newline\newline
+\textbf{Intuition of a new algorithm:}\newline\newline
+The arc $(s, v)$, at the first step, must be the shortest path from $s$ to $v$ since the first segment of \textbf{any other} path is already longer. A similar reasoning works in the next steps.\newline\newline
+\textbf{Dijkstra algorithm:}
+\begin{itemize}
+    \item \textbf{input:} directed $G$, $s \in V$, $w: E \rightarrow R_{>0}$
+
+    \item \textbf{output:} $len(v) = dist(s, v) \,\, \forall v \in V$
+\end{itemize}
+\begin{algorithm}
+\caption{Dijkstra}\label{Dijkstra}
+    \begin{algorithmic}[1]
+    \Procedure{Dijkstra ($G, s$)}{}
+        \State $\text{X} = \{s\}$
+        \State $len(s) = 0$
+        \State $len(v) = \infty$
+        \While{There is an edge $(v, w)$ with $v \in X$ and $w \notin X$}
+            \State $(v^{*}, w^{*}) = $ such an edge minimizing $len(v) + w(v, w)$
+
+            \State add $w^{*}$ to X
+
+            \State $len(w^{*}) = len(v^{*}) + w(v^{*}, w^{*})$
+        \EndWhile
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+At each iteration, $X$ contains the node whose shortest paths are known.\newline\newline
+Dijkstra does \textbf{not} work on graphs with negative edge weights.\newline\newline
+\textbf{Correctness:}
+The proof is performed by induction on $|X|$.
+\begin{itemize}
+    \item \textbf{Invariant:} $\forall x \in X$, $len(x) = dist(s, x)$
+
+    \item \textbf{Base case:} $|X| = 1$ it's trivial
+
+    \item \textbf{Inductive hypothesis:} Invariant is true $\forall |X| = k \geq 1$
+\end{itemize}
+Let $v$ be the \textbf{next} vertex added to $X$ and $(u, v)$ the arc. The shortest path from $s$ to $u$ $+ (u, v)$ is a path from $s$ to $v$ of length $\pi(v) = min_{(u, v): u \in X, \, v \notin X}len(u) + w(u, v)$. Let's consider any path $P$ from $s$ to $v$, we'll show that $P$ is not shorter than $\pi(v)$. Let $(x, y)$ be the first arc in $P$ that traverses $X$ and let $P^{'}$ be the sub-path from $s$ to $x$. Since all the weights are non-negative, it follows that:
+\[len(P) \geq len(P^{'}) + w(x, y)\]
+By Inductive hypothesis we know that $len(x): \,\, x \in X = dist(s, x)$:
+\[len(P^{'}) + w(x, y) \geq len(x) + w(x, y)\]
+By definition of $\pi$ we obtain:
+\[len(x) + w(x, y) \geq \pi(y)\]
+But since the algorithm always selects the minimum edge:
+\[\pi(y) \geq \pi(v)\]
+\textbf{Complexity:} $O(m \cdot n)$. This is an inefficient implementation since it keeps searching the minimum edge checking all the edges $n$ times. It can be speeded up using heaps:
+
+\begin{algorithm}
+\caption{Dijkstra-Heaps}\label{Dijkstra-Heaps}
+    \begin{algorithmic}[1]
+    \Procedure{Dijkstra ($G, s$)}{}
+        \State $X = \emptyset$
+        \State $H = \text{empty heap}$
+        \State $key(s) = 0$
+        \For{$v \neq s$}
+            \State $key(v) = \infty$
+        \EndFor
+        \For{$v \in V$}
+            \State insert $v$ into $H$
+        \EndFor
+
+        \While{$H$ is not empty}
+            \State $w^* = \text{extractMin}(H)$
+            \State add $w^*$ to $X$
+            \State $len(w^*) = key(w^*)$
+            \For{each edge $(w^*, y)$ such that $y \notin X$}
+                \State $key(y) = min(key(y), len(w^*) + w(w^*, y)) \quad //\text{Update the heap}$
+            \EndFor
+        \EndWhile
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+The complexity of this new implementation is $O((n + m) log\,n)$. There are $O(n + m)$ operations on the heap.
+

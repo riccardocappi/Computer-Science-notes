@@ -1,0 +1,87 @@
+\chapter{Lec 05 - Prim's \& Kruskal's algorithms}
+
+\section{Efficient Prim's algorithm}
+The \textit{standard} implementation of Prim's algorithm has a complexity of $O(m \cdot n)$. For small graph it is an efficient algorithm, but it is not so efficient in very large graphs (e.g. Facebook graph).\newline\newline
+In the basic implementation the calculation of a light-edge (i.e. the \textbf{minimum} cross edge with respect to the cut $(S, V \setminus S)$) is done repeatedly. If we are able to speed-up this computation, then the algorithm will be faster. This kind of optimization can be done using a \textbf{heap}. A heap is a data structure which supports the following operations:
+\begin{itemize}
+    \item \textbf{insert:} add an object to the heap
+    \item \textbf{extractMin:} remove the object with the smallest key (highest priority)
+    \item \textbf{delete:} given a pointer to an object, remove it.
+\end{itemize}
+In a heap with $n$ objects, the complexity of these operations is $O(log(n))$\newline\newline
+We can redefine the Prim's algorithm exploiting this efficient data structure:
+\begin{algorithm}
+\caption{Prim}\label{Prim}
+    \begin{algorithmic}[1]
+    \Procedure{Prim ($G, s$)}{}
+        \For{$v \in V$}
+            \State Key($v$) $= + \infty$
+            \State $\Pi(v) = null$
+        \EndFor
+        \State Key($s$) = 0
+        \State $H = V$
+        \While{$H \neq \emptyset$}
+            \State $v^{*} = \text{extractMin}(H)$
+            \For{$v$ adjacent to $v^{*}$}
+                \If{$v \in H$ and $w(v^{*}, v) < \text{Key($v$)}$}
+                    \State $\Pi(v) = v^{*}$
+                    \State $\text{Key($v$)} = w(v^{*}, v) \quad \text{//Updating the heap}$
+                \EndIf
+            \EndFor
+        \EndWhile
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}\newline\newline
+$H$ is the heap which contains all the vertices not in the tree. $\Pi(v)$ denotes the parent of $v$ in the tree.\newline\newline %Set A ?
+\textbf{Complexity:}
+The algorithm performs an initialization, a while loop and a for loop. Let's see the complexity of each of these operations:
+\begin{itemize}
+    \item \textbf{init:} $O(n)$
+    \item \textbf{while:} $n$ iterations
+    \item \textbf{extractMin:} $O(log(n))$
+\end{itemize}
+Total cost of extractMin $\rightarrow O(n\,log(n))$
+\begin{itemize}
+    \item \textbf{for loop:} executed $O(m)$ times in total:
+    \begin{itemize}
+        \item $v \in H \rightarrow O(1)$
+        \item $\text{Key($v$)} = w(v^{*}, v) \rightarrow O(log(n))$
+    \end{itemize}
+\end{itemize}
+Total cost of for loop $\rightarrow O(m\,log(n))$. \newline\newline
+Then, the total complexity of the algorithm is $O(n\,log(n) + m\,log(n))$. Since the graph is connected, it becomes $O(m\,log(n))$.
+
+\section{Kruskal's algorithm}
+Kruskal's algorithm is another algorithm for the MST problem which implements the Generic-MST algorithm. In particular:
+\begin{itemize}
+    \item $A$ is a forest (set of trees)
+    \item \textit{safe edge} is a light-edge connecting two distinct components
+\end{itemize}
+\begin{algorithm}
+\caption{Kruskal}\label{kruskal}
+    \begin{algorithmic}[1]
+    \Procedure{Kruskal ($G$)}{}
+        \State $A = \emptyset$
+        \State Sort edges of $G$ by weight
+        \For{edge $e$ in non-decreasing order}
+            \If{$A \cup \{e\}$ is acyclic}
+                \State $A = A \cup \{e\}$
+            \EndIf
+        \EndFor
+        \Return $A$
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+Note that:
+\begin{itemize}
+    \item A source vertex is not needed
+    \item We can perform a simple optimization, that is, stop the for loop when $A$ has $n-1$ edges.
+\end{itemize}
+\textbf{Correctness:} Follows from correctness of Generic-MST.\newline\newline
+\textbf{Complexity:}
+\begin{itemize}
+    \item \textbf{sorting:} $O(m\,log(n))$
+    \item \textbf{for loop:} check whether $e = (u,v)$ closes a cycle, which has a complexity of $O(n)$ (DFS implementation). 
+\end{itemize}
+Then, the total complexity is $O(m \cdot n)$.
+

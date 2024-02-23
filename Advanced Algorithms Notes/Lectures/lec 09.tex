@@ -1,0 +1,191 @@
+\chapter{Lec 09 - All-Pairs Shortest Paths (APSP)}
+
+\section{All-Pairs Shortest Paths (APSP)}
+\begin{itemize}
+    \item \textbf{Input:} A directed, weighted graph $G = (V, E)$
+    \item \textbf{Output:} One of the following:
+    \begin{enumerate}
+        \item $dist(u, v)$ for every ordered vertex pair.
+        \item A declaration that $G$ contains a negative cycle.
+    \end{enumerate}
+\end{itemize}
+A first simple solution can be to invoke Bellman-Ford algorithm for every vertex. However, this solution is very inefficient since it has a complexity of $O(m \cdot n^2)$.\newline\newline
+We can do better by exploiting dynamic programming.
+\subsection{Floyd-Warshall algorithm}
+Floyd-Warshall algorithm is an algorithm for APSP problem defined using dynamic programming. Let's define the sub-problems:
+\begin{itemize}
+    \item Call the vertices $1, 2, ..., n$
+
+    \item Compute $dist(u, v, k)$, that is, the length of a shortest path from $u$ to $v$ that uses only the vertices $\{1, 2, .. , k\}$ as internal vertices \footnote{it passes through only those vertices} (excluded $u$ and $v$), and that does not contain a directed cycle. If no such path exists, define $dist(u, v, k) = + \infty$
+\end{itemize}
+The parameter $k$ defines the sub-problem size. In total, there are $O(n^3)$ sub-problems ($n$ choices for $u$, $n$ choices for $v$, $n$ choices for $k$).\newline\newline
+The idea of the algorithm is to expand the set of allowed internal vertices, one vertex at time, until this set is $V$.\newpage
+Note that there are only two candidates for the optimal solution to a sub-problem, depending on whether it uses vertex $k$ or not. If the sum of the distance between $u$ and the new node in question $k$ added to the distance between $k$ and $v$ is less than the distance directly between $u$ and $v$, then the latter is replaced with the previous sum (to go from node $u$ to node $v$ I should go through node $k$).
+\begin{algorithm}
+\caption{Floyd-Warshall}\label{Floyd-Warshall}
+    \begin{algorithmic}[1]
+    \Procedure{Floyd-Warshall ($G$)}{}
+        \State Label the vertices $V = \{1, 2, 3, ..., n\}$ arbitrarily
+        \State $A = n \times n \times (n+1)$ array $\quad$ //in which we store the solutions
+        \State// Base case ($k = 0$)
+        \For{$u = 1$ to $n$}
+            \For{$v = 1$ to $n$}
+                \If{$u = v$}
+                    \State $A[u, v, 0] = 0$
+                \ElsIf{$(u, v) \in E$}
+                    \State $A[u, v, 0] = w(u, v)$
+                \Else 
+                    \State $A[u, v, 0] = + \infty$
+                \EndIf
+            \EndFor
+        \EndFor
+        \State // Solve sub-problems
+        \For{$k = 1$ to $n$}
+            \For{$u = 1$ to $n$}
+                \For{$v = 1$ to $n$}
+                    \State $A[u, v, k] = min(A[u, v, k -1], A[u, k, k-1] + A[k, v, k - 1])$
+                \EndFor
+            \EndFor
+        \EndFor
+        \For{$u = 1$ to $n$}
+            \If{$A[u, u, n] < 0$}
+                \Return \textit{G contains a negative cycle}
+            \EndIf
+        \EndFor
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}\newline\newline
+Since we have constant work ($O(1)$) per sub-problem, the complexity of the algorithm is $O(n^3)$.\newline\newline
+\textbf{Example of execution:}\newline
+\begin{tikzpicture}[node distance={15mm}, thick, main/.style = {draw, circle}, edge/.style = {->,> = latex'}]
+            \node[main] (1) {$1$}; 
+            \node[main] (2) [below left of=1] {$2$}; 
+            \node[main] (3) [below right of=1] {$3$}; 
+            \node[main] (4) [below right of=2] {$4$};
+
+            \draw[edge] (2) -- node[above] {4} (1) ;
+            \draw[edge] (1) -- node[above] {-2} (3);
+            \draw[edge] (2) -- node[above] {3} (3);
+            \draw[edge] (3) -- node[above] {2} (4);
+            \draw[edge] (4) -- node[below] {-1} (2);
+\end{tikzpicture}
+
+\begin{center}
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{$k=0$}} & \multicolumn{4}{c|}{$v$}\\
+        \cline{3-6}
+        \multicolumn{2}{|c|}{} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4}\\
+        \hline
+        \hline
+        \multirow{4}{*}{$u$} & \textbf{1} & 0 & $\infty$ & -2 & $\infty$\\
+        \cline{2-6}
+        & \textbf{2} & 4 & 0 & 3 & $\infty$\\
+        \cline{2-6}
+        & \textbf{3} & $\infty$ & $\infty$ & 0 & 2\\
+        \cline{2-6}
+        & \textbf{4} & $\infty$ & -1 & $\infty$ & 0\\
+        \cline{2-6}
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{$k=1$}} & \multicolumn{4}{c|}{$v$}\\
+        \cline{3-6}
+        \multicolumn{2}{|c|}{} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4}\\
+        \hline
+        \hline
+        \multirow{4}{*}{$u$} & \textbf{1} & 0 & $\infty$ & -2 & $\infty$\\
+        \cline{2-6}
+        & \textbf{2} & 4 & 0 & \textbf{2} & $\infty$\\
+        \cline{2-6}
+        & \textbf{3} & $\infty$ & $\infty$ & 0 & 2\\
+        \cline{2-6}
+        & \textbf{4} & $\infty$ & -1 & $\infty$ & 0\\
+        \cline{2-6}
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{$k=2$}} & \multicolumn{4}{c|}{$v$}\\
+        \cline{3-6}
+        \multicolumn{2}{|c|}{} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4}\\
+        \hline
+        \hline
+        \multirow{4}{*}{$u$} & \textbf{1} & 0 & $\infty$ & -2 & $\infty$\\
+        \cline{2-6}
+        & \textbf{2} & 4 & 0 & 2 & $\infty$\\
+        \cline{2-6}
+        & \textbf{3} & $\infty$ & $\infty$ & 0 & 2\\
+        \cline{2-6}
+        & \textbf{4} & \textbf{3} & -1 & \textbf{1} & 0\\
+        \cline{2-6}
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{$k=3$}} & \multicolumn{4}{c|}{$v$}\\
+        \cline{3-6}
+        \multicolumn{2}{|c|}{} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4}\\
+        \hline
+        \hline
+        \multirow{4}{*}{$u$} & \textbf{1} & 0 & $\infty$ & -2 & \textbf{0}\\
+        \cline{2-6}
+        & \textbf{2} & 4 & 0 & 2 & \textbf{4}\\
+        \cline{2-6}
+        & \textbf{3} & $\infty$ & $\infty$ & 0 & 2\\
+        \cline{2-6}
+        & \textbf{4} & 3 & -1 & 1 & 0\\
+        \cline{2-6}
+        \hline
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{|c|c||c|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{$k=4$}} & \multicolumn{4}{c|}{$v$}\\
+        \cline{3-6}
+        \multicolumn{2}{|c|}{} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4}\\
+        \hline
+        \hline
+        \multirow{4}{*}{$u$} & \textbf{1} & 0 & \textbf{-1} & -2 & 0\\
+        \cline{2-6}
+        & \textbf{2} & 4 & 0 & 2 & 4\\
+        \cline{2-6}
+        & \textbf{3} & \textbf{5} & \textbf{1} & 0 & 2\\
+        \cline{2-6}
+        & \textbf{4} & 3 & -1 & 1 & 0\\
+        \cline{2-6}
+        \hline
+    \end{tabular}
+\end{center}
+
+
+\section{Bellman-Ford algorithm via dynamic programming}
+The idea is to introduce a parameter $i$ that restricts the \textbf{maximum number of edges} allowed in a path, with smaller sub-problems having smaller edge budgets.\newline\newline
+\textbf{Sub-problems:}\newline
+Compute $len(i, v)$, that is, the length of a shortest path from $s$ to $v$ that contains at most $i$ edges. If no such path exists, define $len(i, v) = + \infty$. There are $O(n^2)$ sub-problems in total. Note that every sub-program works with the full input, the idea is to control the allowable size of the output.\newline\newline
+\textbf{Bellman-Ford recurrence:}
+\[
+len(i, v) = \left\{\begin{array}{lr}
+        0 & i = 0 \,\, \text{and} \,\, v = s\\
+        +\infty, & i = 0 \,\, \text{and} \,\, v \neq s\\
+
+        min \left\{\begin{array}{lr}
+             len(i - 1, v) \\
+             min_{(u, v) \in E}(len(i - 1, u) + w(u, v))
+        \end{array}\right\} & \text{otherwise}
+        
+        \end{array}\right\}
+\]
+This formulation can be adopted to APSP and obtain an algorithm with complexity $O(n^3log\,n)$

@@ -1,0 +1,78 @@
+\chapter{Lec 22 - Analysis of Randomized Quicksort}
+
+\section{Randomized Quicksort}
+\begin{algorithm}
+\caption{Randomized Quicksort}\label{RQS}
+    \begin{algorithmic}[1]
+    \Procedure{RandQuicksort($S$)}{}
+        \If{$|S| \leq 1$}
+            \Return $S$
+        \EndIf
+        \State $p = \text{random($S$)}\quad \text{// pick a pivot element uniformly at random from $S$}$
+        \State $S_1 = \{x \in S\,\, \text{s.t. }x < p\}$
+        \State $S_2 = \{x \in S\,\, \text{s.t. } x > p\}$
+        \State $z_1 = RandQuicksort(S_1)$
+        \State $z_2 = RandQuicksort(S_2)$
+        \State \Return $z_1, z_2$
+    \EndProcedure   
+    \end{algorithmic}
+\end{algorithm}
+It is a \textit{LAS VEGAS} algorithm (we choose the pivot at random).\newline\newline
+Suppose that $p$ is always the median of $S$, then:
+\[
+    T_{RQS}(n) = 
+    \begin{cases}
+        2T_{RQS}(\frac{n}{2}) + O(n) & n > 1 \\
+        0 & n\leq 1
+    \end{cases}
+\]
+where $n = |S|$. Then $T_{RQS}(n) = O(nlog\,n)$.\newline\newline
+However, $p$ is the median with probability $\frac{1}{n}$, very low. Actually, there exists a deterministic linear algorithm to compute the median. This implies that this version of deterministic Quicksort has complexity $O(nlog\,n)$. The problem is that the hidden constant is very high, thus it is inefficient in practice.\newline\newline
+Fortunately, we don't really need that the random choice hits always the median. For example, let's see what happens if the pivot is always chosen between the $(\frac{n}{4} + 1)$-th order statistics and the $(\frac{3}{4}n)$-th order statistics. By looking at the recursion tree, if such a pivot is always chosen, all the root-leaf paths are no longer than $log_{\frac{4}{3}}n$. This is because $|S|$ after $i$ \textit{successes} is $\leq (\frac{3}{4})^in$. This implies that $T_{RQS} = O(nlog\,n)$. It is not necessary that $S_1$ and $S_2$ are perfectly balanced.\newline\newline
+If we prove that the depth of the recursion tree is $O(log\,n)$ w.h.p. then $T_{RQS} = O(nlog\,n)$ w.h.p.
+
+\section{Analysis}
+Let's call the event $E = \textit{lucky choice of the pivot}$, that is, pivot chosen between the $(\frac{n}{4} + 1)$-th order statistics and the $(\frac{3}{4}n)$-th order statistics. Then:
+\[P(E) = \left(\frac{\frac{3}{4} - (\frac{n}{4} + 1) + 1}{n}\right) = \frac{1}{2}\]
+Fix \textbf{one} root-leaf path $P_1$:\newline\newline
+\textbf{Lemma:} $P(|P_1| > a \cdot log_{\frac{4}{3}}n) < \frac{1}{n^3}$.\newline\newline
+If this lemma is true, it follows that:
+\begin{enumerate}
+    \item Given the event $E_i = \textit{the path $p_i$ has length } > a \cdot log_{\frac{4}{3}}n$:
+    \[P(\exists \textit{ a path with length } > a \cdot log_{\frac{4}{3}}n) = P\left(\bigcup_{i=1}^n E_i\right) \leq \sum_{i=1}^n P(E_i) < \frac{1}{n^2}\]
+
+    \item Therefore, the probability that all the root-leaf paths have length $\leq a \cdot log_{\frac{4}{3}}n$ is the following:
+    \[P(\textit{all the root-leaf paths have length $\leq a \cdot log_{\frac{4}{3}}n$}) \geq 1 - P(\exists \textit{ a path with length } > a \cdot log_{\frac{4}{3}}n) \geq 1 - \frac{1}{n^2}\]
+\end{enumerate}
+This would imply that $T_{RQS}(n) = O(nlog\,n)$ w.h.p.\newline\newline
+It remains to prove the Lemma above.\newline\newline
+\textbf{Proof:} Given a path $\Pi$, let $l = a \cdot log_{\frac{4}{3}}n$. We want to study the event $E =$ \textit{in the first l nodes of $\Pi$ there have been $< log_{\frac{4}{3}}n$ lucky choices}.
+\begin{itemize}
+    \item $X_i \quad 1 \leq i \leq l$
+    \item $X_i = 1$ if at the $i$-th node of $\Pi$ there is a \textit{lucky choice} of the pivot. 
+    \item $P(X_i = 1) = \frac{1}{2} \quad \forall i$.
+    \item $X_i$ are independent.
+\end{itemize}
+We want the probability $P(\sum_{i=1}^l X_i) < log_{\frac{4}{3}}n$ to be bound.\newline\newline
+Given $X = \sum_{i=1}^l X_i$, its expected value is defined as follows:
+\[\mu = E[X] = E\left[\sum_{i=1}^l X_i\right] = \sum_{i=1}^l E[X_i] = \sum_{i=1}^l \frac{1}{2} = \frac{a}{2}log_{\frac{4}{3}}n\]
+Now, let's apply the following Chernoff bound:
+\[P(X < (1 - d)\mu) < e^{-\mu\frac{d^2}{2}} \quad 0 < d \leq 1\]
+We want $(1 - d)\mu = log_{\frac{4}{3}}n$:
+\[(1-d)\frac{a}{2}log_{\frac{4}{3}}n = log_{\frac{4}{3}}n\]
+One possible solution is:
+\begin{itemize}
+    \item $a = 8$
+    \item $d = \frac{3}{4}$
+\end{itemize}
+\[
+    \begin{split}
+        P(X < log_{\frac{4}{3}}n) & < e^{-\frac{8}{4}log_{\frac{4}{3}}n \cdot \frac{9}{16}} \\
+        & = e^{-log_{\frac{4}{3}}n\cdot\frac{9}{8}}\\
+        & < e^{-log_{\frac{4}{3}}n}\\
+        & = e^{-\frac{ln\,n}{ln\,\frac{4}{3}}}\\
+        & = \left(e^{-ln\,n}\right)^{\frac{1}{ln\,\frac{4}{3}}}\\
+        & = \left(\frac{1}{n}\right)^{1/ln\,\frac{4}{3}}\\
+        & < \frac{1}{n^3}
+    \end{split}
+\]

@@ -1,0 +1,57 @@
+\chapter{Lec 18 - Randomized Algorithms}
+
+\section{Randomized algorithms}
+Randomized algorithms are algorithms that may do \textbf{random choices}. Surprisingly, adding random choices into algorithms can make them simpler and faster.\newline\newline
+\textbf{Example: Randomized quicksort}\newline\newline
+In the worst case\footnote{when the \textit{pivot} is the first elements and the elements are already sorted}, quicksort has a complexity of $O(n^2) \rightarrow T_{qs} = O(n^2)$.\newline\newline
+Randomized quicksort (RQS) chooses the \textit{pivot} at random. The expected complexity of RQS is:
+\[E[T_{RQS}] = O(nlog\,n)\]
+\textbf{Example 2: Verify polynomial identities}
+Check whether two polynomials are equivalent:
+\begin{equation}
+    \begin{split}
+        H(x) & = (x + 1)(x - 2)(x + 3)(x - 4)(x + 5)(x - 6)\\
+        G(x) & = x^6 -7x^3 + 25 \\
+        H(x) & \stackrel{?}{\equiv} G(x)
+    \end{split}
+\end{equation}
+The obvious algorithm is to transform $H(x)$ in canonical form:
+\[\sum_{i=0}^{d = 6}c_ix^i\]
+where $c_i$ is the $i$-th coefficient and $d$ is the maximum degree of $H(x)$. Then, we can verify whether all the coefficients $c_i$ of all monomial are equal.\newline\newline
+The \textbf{complexity} of this simple algorithm is $O(d^2)$.\newline\newline
+\textbf{A faster algorithm:}
+\begin{enumerate}
+    \item choose a random integer $r$
+    \item compute $H(r)$
+    \item compute $G(r)$
+    \item if $H(r) = G(r)$ then return \textit{YES}, else return \textit{NO}
+\end{enumerate}
+Note that this is a linear algorithm $O(d)$, but does it work?\newline\newline
+Let's consider the following example:
+\begin{enumerate}
+    \item $r = 2$
+    \item $H(2) = 0$
+    \item $G(2) = 33$
+    \item $G \neq H$
+\end{enumerate}
+In this case the algorithm always outputs the correct answer, but what if $H(r) = G(r)$ ?\newline\newline
+Let's consider the following two polynomials:
+\[x^2 + 7x + 1 \stackrel{?}{\equiv} (x + 2)^2\]
+\begin{enumerate}
+    \item $r = 1$
+    \item $1 + 7 + 1 = 3^2 = 9$
+\end{enumerate}
+The algorithm return \textit{YES} even if the two polynomial are \textbf{not} equivalent.\newline\newline
+The algorithm fails only if $r$ is a root (solution) of the polynomial $F(x) = G(x) - H(x) = 0$. Basically, if the algorithm outputs \textit{NO} is always correct, but may fail when it outputs \textit{YES}.\newline\newline
+Therefore, the algorithm fails only if it is \textit{unlucky} in choosing the value of $r$. But how likely is to choose such a value of $r$?\newline\newline
+If $r \in \{1,2, ..., 100d\}$ where $d$ is the max degree in $F(x)$, then the probability that the algorithm fails is the followinng:
+\[P_r(\text{algorithm fails}) \leq \frac{d}{100d} = \frac{1}{100} = 1\%\]
+It's unlikely that the algorithm fails, but still not satisfactory. We can reduce the probability of error by running the algorithm multiple times:
+\begin{enumerate}
+    \item run the algorithm 10 times.
+    \item if it returns \textit{YES} is \textbf{all} the runs then return \textit{YES}, else return \textit{NO}.
+\end{enumerate}
+Now the probability of error is much lower:
+\[P_r(\text{algorithm fails}) \leq \left(\frac{1}{100}\right)^{10} = 10 ^{-20} < 2^{-64}\]
+It's easier that your computer returns a wrong answer because it gets hit by a cosmic radiation that makes some bits flip. 
+

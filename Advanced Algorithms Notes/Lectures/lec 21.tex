@@ -1,0 +1,44 @@
+\chapter{Lec 21 - Chernoff bounds}
+
+\section{Chernoff bounds}
+Chernoff bounds are tools from modern probability theory that can be used for the analysis of randomized algorithms. They're a more powerful version of the Markov's lemma.\newline\newline
+In many cases, the study of $P(T(n) > c \cdot f(n))$ can be rephrased as the study of the distribution of some sum of \textbf{indicator} random variables (0-1 variables). In general:
+\[X = \sum_{i = 1}^n X_i \quad \text{$X_i$ indicator random variable}\]
+The variable $X$ counts the number of successes obtained by the $n$ indicator variables (e.g. counting the number of times we get \textit{head} by tossing a coin 10 times). We'll usually have that $X_i$'s are \textbf{independent}.\newline\newline
+Given $P(X_i = 1) = p_i$, the expected value (mean value) of $X$ is given by:
+\[E[X] = E\left[\sum_{i=1}^n X_i\right] = \sum_{i=1}^n E[X_i] = \sum_{i=1}^np_i = \mu\]
+We want to analyze the probability that $X$ deviates from its expected value. Let's try to use Markov's lemma:
+\[P(X > (1 + d)\mu) \leq \frac{E[X]}{(1+d)\mu} = \frac{\mu}{(1+d)\mu} = \frac{1}{1+d}\]
+If $d = 1$, the probability that $X$ deviates from $\mu$ is $\leq \frac{1}{2}$. This bound is not so informative!
+
+\subsection{A more powerful tool}
+\textbf{Chernoff bound:} Let $X_1, X_2, ..., X_n$ be independent indicator random variables where $E[X_i] = p_i ,\,\, 0 < p_i < 1$. Let $X = \sum_{i=1}^n X_i$ and $\mu = E[X]$. Then, $\forall\, d > 0$:
+\[P(X > (1+d)\mu) < \left(\frac{e^d}{(1+d)^{(1+d)}}\right)^\mu\]
+\textbf{Example: tossing a coin}\newline\newline
+$n\text{ coin flips}\rightarrow X_1, X_2, ..., X_n$.
+\begin{itemize}
+    \item Let $X_i = 1$ get \textit{heads} and $X_i = 0$ get \textit{tails}.
+
+    \item Since we assume the coin is fair, $P(X_i = 1) = \frac{1}{2} \,\, \forall \, i$.
+
+    \item $X = \sum_{i=1}^n X_i$ counts the number of \textit{heads} obtained by flipping $n$ times the coin.
+
+    \item $E[X] = \sum_{i=1}^n \frac{1}{2} = \frac{n}{2}$.
+\end{itemize}
+Question: What's the probability of getting more than $\frac{3}{4}n$ \textit{heads}? Let's apply both Markov's lemma and Chernoff bound:
+\begin{enumerate}
+    \item Markov's lemma:
+    \[P(X > (1 + \frac{1}{2})\mu) \leq \frac{1}{1 + \frac{1}{2}} = \frac{2}{3}\]
+
+    \item Chernoff bound:
+    \[P(X > (1 + \frac{1}{2})\mu) < \left(\frac{e^{\frac{1}{2}}}{(\frac{3}{2})^{\frac{3}{2}}}\right)^{\frac{n}{2}} < (0.95)^n\]
+\end{enumerate}
+The Chernoff bound tells us that the probability goes to 0 exponentially fast as $n$ increases.
+
+\subsection{Variants of Chernoff bound:}
+\begin{itemize}
+    \item $P(X < (1 - d)\mu) < e^{-\mu\frac{d^2}{2}} \quad 0 < d \leq 1$
+
+    \item $P(X > (1 + d)\mu) < e^{-\mu\frac{d^2}{2}} \quad 0 < d \leq 2e - 1$
+\end{itemize}
+

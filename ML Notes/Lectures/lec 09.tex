@@ -1,0 +1,99 @@
+\chapter{Lec 09 - Neural Networks III}
+
+\section{Other activation functions}
+Multiple layers of cascaded units makes a Neural Network able to implement complex non linear functions. The non linearity of the model is given by the activation functions. In fact, without them (linear activation) the result of the model, even if it’s very complex, would still be linear. If we used step activation functions we wouldn't be able to resort to gradient descent to optimize the weights. This is because step function is not derivable. We have to choose one or more activation functions that are derivable.
+\begin{itemize}
+    \item \textbf{Sigmoid:}
+    \[\sigma(y) = \frac{1}{1 + e^{-y}}\]
+
+    \item \textbf{ReLu:}
+    \[r(y) = max(0, y)\]
+\end{itemize}
+\section{Multi-layer Neural Networks: Keywords}
+Let's define the most important keywords for Multi-layer Neural Networks:
+\begin{itemize}
+    \item $d$ \textbf{input units}: $d$ input data size $\textbf{x} \equiv (x_{1},...,x_{d})$, $d + 1$ when including the bias in the weight vector $\textbf{x}^{'} \equiv (x_{0}, x_{1},...,x_{d})$
+
+    \item $n_{H}$ \textbf{hidden units} (with output $\textbf{y} \equiv (y_{1},...,y_{n_{H}})$)
+
+    \item $c$ \textbf{output units}: $\textbf{z} \equiv (z_{1},...,z_{c})$. The number of desired output is $\textbf{t} \equiv (t_{1},...,t_{c})$
+
+    \item $w_{ji}$ weight from the $i$-th input unit to the $j$-th hidden unit ($w_{j}$ is the weight vector of the $j$-th hidden unit)
+
+    \item $w_{kj}$ weight from the $j$-th hidden unit to the $k$-th output unit ($w_{k}$ is the weight vector of the $k$-th output unit)
+\end{itemize}
+\section{Learning algorithm}
+Let's consider, for example, a Neural Network with just one hidden layer and \textbf{sigmoid activation functions}. The basic idea of the learning algorithm consists in two phases:
+\begin{itemize}
+    \item \textbf{Forward phase:} for each example in the training set, present it to the network and compute the output.
+    \item \textbf{Backward phase:} Back-propagate the committed error and update the weights of the hidden units accordingly. 
+\end{itemize}
+This algorithm is called \textbf{Backpropagation}\newline\newline
+As we said before, this algorithm is based on gradient descent, so we need to minimize an error function $E[\textbf{w}]$ that can be defined as follows:
+\[E[\textbf{w}] = \frac{1}{2cN}\sum_{s=1}^{N}\sum_{k=1}^{c}(t_{k}^{(s)} - z_{k}^{(s)})^{2}\]
+In order to implement Backpropagation, we need to first compute the gradient for the weights of both output and hidden units.
+\begin{itemize}
+    \item \textbf{Gradient of the weights of an output unit:}
+    \[\frac{\partial E}{\partial w_{\hat{k}\hat{j}}} = - \frac{1}{cN}\sum_{s=1}^{N}(t_{\hat{k}}^{(s)} - z_{\hat{k}}^{(s)} )z_{\hat{k}}(1 - z_{\hat{k}})y_{\hat{j}}^{(s)}\]
+    where $y_{\hat{j}}^{(s)}$ is the output of the $\hat{j}$-th hidden unit.
+    
+    \item \textbf{Gradient of the weights of a hidden unit:}
+    \[\frac{\partial E}{\partial w_{\hat{j}\hat{i}}} = - \frac{1}{cN}\sum_{s=1}^{N}y_{\hat{j}}^{(s)}(1 - y_{\hat{j}}^{(s)})x_{\hat{i}}^{(s)}\sum_{k=1}^{c}(t_{\hat{k}}^{(s)} - z_{\hat{k}}^{(s)} )z_{\hat{k}}(1 - z_{\hat{k}})w_{k\hat{j}}\]
+\end{itemize}
+Note that, for simplicity, we are considering a Neural Network with just one hidden layer, but the derivation can be extended for more than one hidden layer.
+\subsection{Back-propagation algorithm}
+Back-propagation is an algorithm that aims to update the weights of a Neural Network in order to minimize the error between the predicted output and the true output. The algorithm works by propagating the error back through the network, starting with the output layer and moving backwards through the hidden layers, adjusting the weights at each layer to reduce the error. It can be implemented in different ways:
+\begin{itemize}
+    \item \textbf{Batch gradient descent:} It \textbf{cumulates} gradients over all the training examples and then updates the weights.
+    \item \textbf{Stochastic gradient descent:} For each example in $S$, it computes the gradients and update the weights.
+    \item \textbf{Mini-batch gradient descent:} It updates the weights considering a subset of examples $Q \subseteq S$. 
+\end{itemize}
+This process is typically repeated many times until the error is sufficiently small or the maximum number of iterations is reached. Let's define the algorithm according to the derivations seen before:\newline\newline
+\textbf{Back-propagation (stochastic)}
+\begin{enumerate}
+    \item Initialize all weights with small random values (e.g. between -0.5 and +0.5)
+    \item Until the termination condition is satisfied:
+    \begin{enumerate}
+        \item For each $(\textbf{x},\textbf{t}) \in S$:
+        \begin{enumerate}
+            \item Present $\textbf{x}$ to the net and compute the vectors $\textbf{y}$ and $\textbf{z}$
+            \item For each output unit $k$:
+            \[\delta_{k} = z_{k}(1 - z_{k})(t_{k} - z_{k})\]
+            \[\Delta w_{kj} = \delta_{k}y_{j}\]
+
+            \item For each hidden unit $j$:
+            \[\delta_{j} = y_{j}(1 - y_{j})\sum_{k=1}^{c}w_{kj}\delta_{k}\]
+            \[\Delta w_{ji} = \delta_{j}x_{i}\]
+
+            \item Update all weights:
+            \[w_{sq} \leftarrow w_{sq} + \eta \Delta w_{sq}\]
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+Note that this algorithm works only for a network with one hidden layer, but can be easily extended. In fact, the algorithm computes the error term $\delta$ for each unit of each layer, and then it multiplies this error term for the input of the unit.
+
+\section{Computational power of neural networks}
+\textbf{Theorem (Pinkus, 1996) simplified}:\newline
+Given a feed-forward NN with just one hiddel layer, any continuous function $f:\mathbb{R}^{n} \rightarrow \mathbb{R}$ and an arbitrarily small $\epsilon > 0$, then, for a large class of activation functions, there always exists an integer $M$ such that the function $g: \mathbb{R}^{n} \rightarrow \mathbb{R}$ computed by the net using at least $M$ hidden units approximates the function $f$ with tolerance $\epsilon$, that is:
+\[max_{x \in \Omega}|f(\textbf{x}) - g(\textbf{x})| < \epsilon\]
+Note that the theorem attests the existence of a NN with $M$ hidden units that approximates the target function with the desired tolerance, but it says nothing about how $M$ can be computed.
+
+\section{Fine tuning neural networks}
+The choice of the net typology determines the hypothesis space used. With three-layers architecture (input, hidden, output), the number of hidden units detrmines the complexity of the hypothesis space. As we said for the Perceptron, the choice of the learning rate $\eta$ can be crucial for the convergence.
+\subsection{Avoiding local minima}
+The local minima problem in neural networks refers to the scenario where a neural network gets stuck in a sub-optimal solution during the training process. Instead of reaching the global minimum, which is the best possible solution, the network settles for a local minimum, that may not be the best fit for the data. This can happen because the loss function used can have multiple local minima, and the optimization algorithm may only find one of them. In order to avoid this problem, we can use different techniques:
+\begin{itemize}
+    \item Adding a term to the weight update rule (called \textbf{momentum}). Basically, a contribution deriving from the previous step is added, imposing a kind of inertia on the system.
+
+    \item Using \textbf{stochastic training} (randomizing on the examples) instead of batch training can facilitate to avoid local minima.
+
+    \item \textbf{Training multiple NNs} on the same data with different initialization and combining the outputs.
+\end{itemize}
+
+\subsection{Over-fitting}
+With neural networks, usually, the error on the validation set increases as the number of weight updates increases. This is because, at the beginning, with small absolute values of the weights (similar each other), the decision surfaces are \textit{smoother}. When the absolute values of the weights increase , the complexity of the decision surfaces increases and with it the possibility to suffer over-fitting. \newline\newline
+A possible solution can be to use an additional term in the error function to minimize based on the norm of the weights (regularization) $E + ||w||^{2}$.
+
+\section{Hidden layer representation}
+An important feature of multi-layer NNs is that they can find useful representations of input data (alternative to the input representation). Specifically, the output of the hidden units is an effective new input representation for the next layers. This feature can be used to define a particular type of NNs called Auto-encoders.
+

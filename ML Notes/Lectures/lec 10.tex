@@ -1,0 +1,94 @@
+\chapter{Lec 10 - Generalized Linear Models and SVM I}
+\section{Linear Models}
+Linear models are one of the most important types of models in machine learning. A linear model is of the form:
+\[f_{\textbf{w},b}(\textbf{x}) = \sum_{i=1}^{m} w_{i}x_{i} + b = \textbf{w} \cdot \textbf{x} + b\]
+Which can also be written as
+\[f_{\textbf{w},b}(\textbf{x}) = \sum_{i=0}^{m} w_{i}x_{i}= \textbf{w} \cdot \textbf{x}\]
+where $x_{0} = 1$.
+\begin{itemize}
+    \item For \textbf{classification}, the sign of the result is returned, that is:
+    \[h(\textbf{x}) = sign(f_{\textbf{w}}) \in \{-1, +1\}\]
+
+    \item For \textbf{regression}, the \textit{original} function can be taken, that is:
+    \[h(\textbf{x}) = f_{\textbf{w}} \in \mathbb{R}\]
+\end{itemize}
+\subsection{Linear Regression}
+Given a training set $S = \{(\textbf{x}_{1}, y_{1}), ..., (\textbf{x}_{n}, y_{n})\}$, in linear regression we look for a hypothesis $h_{\textbf{w}}$ which minimizes the mean squared error on the training set, that is:
+\[argmin_{\textbf{w}} \frac{1}{n}\sum_{i=0}^{n}(h_{\textbf{w}}(\textbf{x}_{i}) - y_{i})^{2}\]
+We can formalize it in matrices terms:
+\[E(\textbf{w}) = \frac{1}{n}\sum_{i=0}^{n}(h_{\textbf{w}}(\textbf{x}_{i}) - y_{i})^{2}\]
+\[= \frac{1}{n}\sum_{i=0}^{n}(\textbf{w} \cdot \textbf{x}_{i} - y_{i})^{2}\]
+\[= \frac{1}{n}||\textbf{Xw} - \textbf{y}||\]
+where:
+\begin{itemize}
+    \item $\textbf{X}$ is a matrix of size $n \times d$
+    \item $\textbf{w}$ is a vector of size $d \times 1$
+    \item $\textbf{y}$ is a vector of size $n \times 1$
+\end{itemize}
+$d$ is the dimension of the feature space (including the bias term). Basically, we want that $\textbf{Xw} \approx \textbf{y}$.\newline\newline
+Since $||\vec{z}||^{2} = \sum_{i}z_{i}^{2}$, the optimization problem can be defined as follows:
+\[min_{\textbf{w}}E(\textbf{w}) \equiv \frac{1}{n}||\textbf{Xw} - \textbf{y}||^{2}\]
+We want to find the vector $\textbf{w}$ that minimizes $E$. Basically, we want to find the points $\textbf{w}$ where the gradient vanishes (equals to 0), that is:
+\[\nabla E(\textbf{w}) = \frac{2}{n}\textbf{X}^{T} (\textbf{Xw} - \textbf{y}) = 0\]
+\[\textbf{X}^{T}\textbf{Xw} = \textbf{X}^{T}\textbf{y}\]
+By multiplying the quantity $(\textbf{X}^{T}\textbf{X})^{-1}$ both on the left and on the right of the equation, it becomes:
+\[(\textbf{X}^{T}\textbf{X})^{-1}(\textbf{X}^{T}\textbf{X})\textbf{w} = (\textbf{X}^{T}\textbf{X})^{-1}\textbf{X}^{T}\textbf{y}\]
+Since $(\textbf{X}^{T}\textbf{X})^{-1}(\textbf{X}^{T}\textbf{X})$ is the identity matrix, the final equation is:
+\[\textbf{w} = (\textbf{X}^{T}\textbf{X})^{-1}\textbf{X}^{T}\textbf{y}\]
+This is a \textbf{closed form solution}. It means that with just one computation we are able to find the solution, it's not am iterative process. However, computing the inverse of a matrix can be very computational inefficient.
+
+\subsection{Non-linear mapping}
+The goal of non-linear mapping is to apply a transformation to non-linearly separable points in order to map them in a new feature space that is linearly separable. Then, a linear model (hyperplane) in the transformed space will correspond to a non-linear decision surface in the original space (Generalized Linear Models).
+
+\section{Linear separability}
+Consider the hypothesis space of hyperplanes. Given a set of linearly separable points, we have different hyperplanes that separates them. Intuitively, the widest possible margin (or \textbf{optimal}) hyperplane is the best one, because is the one that generalizes better, but how can we compute to which $\textbf{w}$, $b$ the best hyperplane corresponds.
+\subsection{Margin of a hyperplane}
+The margin of a hyperplane is the distance between the hyperplane and the closest data points of each class. \newline\newline
+Let's consider the \textbf{binary classification} problem. Given the hyperplane $\textbf{w} \cdot \textbf{x} + b = 0$ (\textbf{optimal hyperplane}), the \textit{"distance"} of a point $\textbf{x}$ from the hyperplane can be expressed by the algebraic measure $g(\textbf{x}) = \textbf{w}^{T} \cdot \textbf{x} + b$. We can write $\textbf{x}$ as follows:
+\[\textbf{x} = \textbf{x}_{p} + r\frac{\textbf{w}}{||\textbf{w}||}\]
+where:
+\begin{itemize}
+    \item $||\textbf{w}||$ is the norm of $\textbf{w}$
+    \item $\textbf{x}_{p}$ is the normal projection of $\textbf{x}$ onto the hyperplane.
+    \item $r$ is the desired algebraic distance ($r > 0$ if $\textbf{x}$ is on the positive side of the hyperplane, otherwise $r < 0$).
+\end{itemize}
+Note that $g(\textbf{x}_{p}) = 0$ because $\textbf{x}_{p}$ is on the hyperplane. Furthermore, since we are considering the optimal hyperplane, the absolute distance between this hyperplane and any nearest positive example is the same as the absolute distance between any negative example. So, we can \textit{normalize} the value of $g$ such that $g(\textbf{x}) = 1$ if $\textbf{x}$ is in the positive margin hyperplane and $g(\textbf{x}) = -1$ if $\textbf{x}$ is in the negative margin hyperplane.\newline\newline
+Take $\textbf{x}_{k}$ in the positive margin hyperplane, it follows that
+\[g(\textbf{x}_{k}) = \textbf{w}^{T}\textbf{x}_{k} + b\]
+Since $\textbf{x}_{k} = \textbf{x}_{p} + r\frac{\textbf{w}}{||\textbf{w}||}$:
+\[= \textbf{w}^{T}\left(\textbf{x}_{p} + r\frac{\textbf{w}}{||\textbf{w}||}\right) + b\]
+\[= \textbf{w}^{T}\textbf{x}_{p} + b + r\frac{\textbf{w}^{T}\textbf{w}}{||\textbf{w}||}\]
+Since $\textbf{w}^{T}\textbf{w} = ||\textbf{w}||^{2}$:
+\[= \textbf{w}^{T}\textbf{x}_{p} + b + r||\textbf{w}||\]
+The term $\textbf{w}^{T}\textbf{x}_{p} + b = 0$ because, as we said before, $g(\textbf{x}_{p}) = 0$. This implies that:
+\[g(\textbf{x}_{k}) = r||\textbf{w}|| = +1\]
+This is true only if
+\[r = \frac{1}{||\textbf{w}||}\]
+Then, the margin $\rho$ is defined as follows:
+\[\rho = 2r = \frac{2}{||\textbf{w}||}\]
+\section{Support Vector Machines (SVM)}
+Support Vector Machines (SVMs) are a set of supervised learning methods used for classification and regression tasks. The idea behind SVMs is to find the best hyperplane that separates the training data. This hyperplane is chosen in such a way that it maximizes the margin.
+\subsection{Separable case: Quadratic optimization}
+If we have $n$ linearly separable examples $\{(\textbf{x}_{i}, y_{i})\}$ (binary classification), it is possible to find the optimal hyperplane $h(\textbf{x}) = sign(\textbf{w} \cdot \textbf{x} + b)$ by solving the following \textbf{constrained} quadratic optimization problem:
+\[min_{\textbf{w},b}\frac{1}{2}||\textbf{w}||^{2}\]
+\[subject \,\, to: \,\, \forall i \in \{1,...,n\}: y_{i}(\textbf{w} \cdot \textbf{x}_{i} + b) \geq 1\]
+Since the margin is defined as $\rho = \frac{2}{||\textbf{w}||}$ and we want to maximize it, we need to minimize $||\textbf{w}||$. This minimization problem is subject to the constraint that each point in the training set must be on the \textit{correct} side of the hyperplane, which means that for each point, the following inequality must hold: $\forall i \in \{1,...,n\}: y_{i}(\textbf{w} \cdot \textbf{x}_{i} + b) \geq 1$. This constraint is given by the fact that:
+\begin{itemize}
+    \item $\textbf{w} \cdot \textbf{x}_{i} + b \geq 1$ if $y_{i} = +1$
+    \item $\textbf{w} \cdot \textbf{x}_{i} + b \leq 1$ if $y_{i} = -1$
+\end{itemize}
+This is a \textbf{convex} constrained quadratic problem, and for this reason it guarantees a unique solution.\newline\newline
+With a large number of features it can be computationally inefficient to solve this problem, so we can use its \textbf{dual formulation}
+\subsection{Dual formulation}
+In the dual problem, Lagrange multipliers $\alpha_{i} \geq 0$ are associated with every constraint in the primal problem (one for each example).
+\[max_{\alpha} \sum_{i=1}^{n}\alpha_{i} - \frac{1}{2}\sum_{i,j=1}^{n}y_{i}y_{j}\alpha_{i}\alpha_{j}(\textbf{x}_{i} \cdot \textbf{x}_{j})\]
+\[subject \,\, to: \,\, \forall i \in \{1,...,n\}: \,\, \alpha_{i} \geq 0 \,\, and \,\, \sum_{i=1}^{n}y_{i}\alpha_{i} = 0\]
+At the solution, most of the $\alpha_{i}$'s are zeros. Those examples associated with non zero multipliers are called \textbf{support vectors}.
+
+\subsection{SVM solution}
+The primal solution turns out to be:
+\[\textbf{w} = \sum_{i=1}^{n}y_{i}\alpha_{i}\textbf{x}_{i}\]
+\[b = y_{k} - \textbf{w} \cdot \textbf{x}_{k}\,\, \forall \textbf{x}_{k}\,\,s.t\,\, \alpha_{k} > 0\]
+Hence:
+\[h(\textbf{x}) = sign(\textbf{w} \cdot \textbf{x} + b) = sign\left(\sum_{i = 1 \in support \,\, vector}^{n}y_{i}\alpha_{i}(\textbf{x}_{i} \cdot \textbf{x}) + b\right)\]
+The decision function only depends on dot products between the point and othe points in the training set (the support vectors).

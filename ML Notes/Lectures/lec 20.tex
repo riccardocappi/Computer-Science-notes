@@ -1,0 +1,100 @@
+\chapter{Lec 20 - Recommender Systems II}
+\section{Notation}
+Let's start with the most important keywords for recommender systems:
+\begin{itemize}
+    \item $U$ is the set of users, $|U| = n$;
+    \item $I$ is the set of items, $|I| = m $;
+    \item $R \equiv \{(u,i) | u \in U \,\, rated \,\, i\in I \}$ is the set of ratings/interactions;
+    \item $\textbf{R} \in \mathbb{R}^{n \times m}$ is the rating matrix with $n$ users and $m$ items. $r_{ui}$ is the rating given by $u$ to item $i$. $\textbf{r}_{u}$ is the row vector representing $u$ and $\textbf{r}_{i}$ is the column vector representing $i$;
+    \item $I_{u} \equiv \{i | (u,i) \in R\}$ is the set of items rated by $u$;
+    \item $U_{i} \equiv \{u | (u,i) \in R\}$ is the set of users who rated $i$;
+    \item $I_{uv} \equiv I_{u} \cap I_{v}$ is the set of items rated by both users $u$ and $v$;
+    \item $U_{ij} \equiv U_{i} \cap U_{j}$ is the set of users who rated both $i$ and $j$.
+\end{itemize}
+
+\section{Collaborative Filtering approaches (CF)}
+We can classify CF approaches in two different classes:
+\begin{itemize}
+    \item \textbf{Similarity-wise:} the recommendation is performed on the basis of similarity between either items or users (e.g. two users are similar if they share many ratings).
+    \item \textbf{Algorithm-wise:}
+    \begin{itemize}
+        \item Memory-based: approaches that use the user rating data to compute the similarity between users or items.
+        \item Model-based: in this approach, models are developed using different algorithms to predict users ratings of unrated items.
+    \end{itemize}
+\end{itemize}
+\section{Computing similarity}
+How can we compute the similarity between users or items? The idea is to compute similarity between users/items starting from the user rating matrix $\textbf{R}$. Ideally, two users (items) are similar if they share many ratings.
+\subsection{Implicit feedback: cosine similarity}
+Let's start with the similarity between users or items with respect to implicit feedback:
+\begin{itemize}
+    \item \textbf{User-based:}
+    \[s_{uv} = \frac{|I_{u} \cap I_{v}|}{\sqrt{|I_{u}| |I_{v}|}} = \frac{\textbf{r}_{u} \textbf{r}_{v}^{T}}{||\textbf{r}_{u}|| ||\textbf{r}_{v}||}\]
+
+    \item \textbf{Item-based:}
+    \[s_{ij} = \frac{|U_{i} \cap U_{j}|}{\sqrt{|U_{i}| |U_{j}|}} = \frac{\textbf{r}_{i}^{T} \textbf{r}_{j}}{||\textbf{r}_{i}|| ||\textbf{r}_{j}||}\]
+\end{itemize}
+Note that , since the values of the rating matrix are binary values (implicit feedback), computing the dot product between $\textbf{r}_{u} \textbf{r}_{v}^{T}$ corresponds to compute the number of shared items (the same is valid also for the item-based case). Also, the squared norm represents the size of the given set.
+\subsection{Explicit feedback: Pearson correlation}
+The following similarity measure is used when in the rating matrix there are non-binary values (explicit feedback):
+\begin{itemize}
+    \item \textbf{User-based:}
+    \[s_{uv} = \frac{\sum_{i \in I_{uv}}(r_{ui} - \mu_{u}) (r_{vi} - \mu_{v})}{\sqrt{\sum_{i \in I_{uv}}(r_{ui} - \mu_{u})^{2} \cdot (r_{vi} - \mu_{v})^{2}}} \in [-1, 1]\]
+    where $\mu_{u}$ and $\mu_{v}$ are the user-bias (average of ratings that user $u$ gave to different items):
+    \[\mu_{u} = \frac{1}{|I_{u}|}\sum_{i \in I_{u}}r_{ui}, \quad \mu_{v} = \frac{1}{|I_{v}|}\sum_{i \in I_{v}}r_{vi}\]
+    Basically, $\mu_{u}$ and $\mu_{v}$ are used to normalize the quantity with respect to different users behaviors (some users can give very high ratings to items, while other users may give low ratings).
+
+    \item \textbf{Item-based:}
+    \[s_{ij} = \frac{\sum_{u \in U_{ij}}(r_{ui} - \mu_{i}) (r_{uj} - \mu_{j})}{\sqrt{\sum_{u \in U_{ij}}(r_{ui} - \mu_{i})^{2} \cdot (r_{uj} - \mu_{j})^{2}}} \in [-1, 1]\]
+    where $\mu_{i}$ and $\mu_{j}$ are the item-bias (average of ratings that users gave to item $i$):
+    \[\mu_{i} = \frac{1}{|U_{i}|}\sum_{u \in U_{i}}r_{ui}, \quad \mu_{j} = \frac{1}{|U_{j}|}\sum_{u \in U_{j}}r_{uj}\]
+    The differences in the ratings scales of users are usually more pronounced than the differences in ratings given to items. Therefore, it may be more appropriate to compare ratings that are centered on their user mean, instead of their item mean:
+    \[s_{ij} = \frac{\sum_{u \in U_{ij}}(r_{ui} - \mu_{u}) (r_{uj} - \mu_{u})}{\sqrt{\sum_{u \in U_{ij}}(r_{ui} - \mu_{u})^{2} \cdot (r_{uj} - \mu_{u})^{2}}} \in [-1, 1]\]
+    where $\mu_{u}$ is the user-bias seen before.
+\end{itemize}
+\subsection{Shrinkage:}
+The problem with the similarity measures seen before is that they could be maximized despite the number of ratings. In order to solve this problem, we can use \textbf{shrinkage}. It aims at re-weighting the similarity penalizing the one based on few ratings.
+\begin{itemize}
+    \item \textbf{User-based}
+    \[s^{'}_{uv} = \left( \frac{|I_{uv}|}{|I_{uv}| + \beta} \right) s_{uv}\]
+
+    \item \textbf{Item-based}
+    \[s^{'}_{ij} = \left( \frac{|U_{ij}|}{|U_{ij}| + \beta} \right) s_{ij}\]
+\end{itemize}
+where $\beta > 0$ (usually set around 100) is a hyper-parameter. Note that when $|I_{uv}|$ ($|U_{ij}|$) is small and $\beta$ is high, the coefficient will be very small (penalize $s_{uv}$). On the other hand, when $|I_{uv}|$ ($|U_{ij}|$) is very high, the coefficient is closed to 1. 
+\section{K-Nearest Neighbours}
+k-nearest neighbours is a memory-based method that computes the recommendation as a weighted combination of the ratings given by the most similar users (items).
+\begin{itemize}
+    \item \textbf{User-based:}
+    \[N^{k}_{i}(u) \equiv \{v \in U_{i} | \,\, |\{v^{'} \in U_{i}| s_{uv^{'}} > s_{uv}\}| < k\}\]
+
+    \item \textbf{Item-based:}
+    \[N^{k}_{u}(i) \equiv \{j \in I_{u} | \,\, |\{j^{'} \in I_{u}| s_{ij^{'}} > s_{ij}\}| < k\}\]
+\end{itemize}
+
+\section{Matrix factorization}
+Matrix factorization (MF) is a model-based technique that is not based on a predefined similarity measure. It maps both users and items to a \textbf{joint latent factor space} of dimension $k$. User-item interactions are modelled as dot-products in that space. The goal is to learn users and items vector representations $\textbf{p}_{u}$ and $\textbf{q}_{i}$.
+\begin{itemize}
+    \item $\textbf{q}_{i}$ measures how much those $k$ factors are present in the item $i$.
+    \item $\textbf{p}_{u}$ measures the importance that user $u$ gives to different factors.
+\end{itemize}
+The dot-product $\textbf{p}_{u}\textbf{q}_{i}^{T}$ captures the interaction between user $u$ and item $i$.\newline\newline
+Each element of the summation $\textbf{p}_{u}\textbf{q}_{i}^{T} = \sum_{f}p_{uf} \cdot q_{if}$ represents the relevance of factor $f$ in the prediction. 
+\begin{itemize}
+    \item High values of $p_{uf}$ means that the factor $f$ is relevant for user $u$;
+    \item High values of $q_{if}$ means that the factor $f$ is present in item $i$; 
+\end{itemize}
+If the result of the dot-product is high, it means that a positively relevant factor for $u$ is present in $i$.
+\[\textbf{R} \approx \textbf{P}\textbf{Q}^{T}\]
+where $\textbf{R} \in \mathbb{R}^{n \times m}, \,\, \textbf{P} \in \mathbb{R}^{n \times k}, \,\, \textbf{Q} \in \mathbb{R}^{m \times k}$. Basically, $\textbf{P}\textbf{Q}^{T}$ should approximates the rating matrix $\textbf{R}$.\newline\newline
+Learning $\textbf{P}$ and $\textbf{Q}$ can be done by optimizing the following loss function:
+\[L(\textbf{P}, \textbf{Q}) = min_{\textbf{P},\textbf{Q}}\sum_{(u,i) \in Tr}\left( r_{ui} -  \textbf{p}_{u}\textbf{q}_{i}^{T}\right)^{2} + \lambda(||\textbf{p}_{u}||^{2} + ||\textbf{q}_{i}||^{2})  \]
+This loss function depends on two terms:
+\begin{itemize}
+    \item $\epsilon_{ui} = \left( r_{ui} -  \textbf{p}_{u}\textbf{q}_{i}^{T}\right)^{2}$: is the prediction error of the model on the rating $r_{ui}$;
+    \item $\lambda(||\textbf{p}_{u}||^{2} + ||\textbf{q}_{i}||^{2})$: it depends on the norm of $\textbf{p}_{u}$ and $\textbf{q}_{i}$. $\lambda \geq 0$ is a regularization hyper-parameter.
+\end{itemize}
+This learning process can be done using, for example, \textbf{Stochastic Gradient Descent} (SGD). For each training rating $r_{ui}$ it makes a prediction using the current model and computes the prediction error $e_{ui}$. Then, it computes the partial derivatives with respect to $\textbf{p}_{u}$ and $\textbf{q}_{i}$ and updates them accordingly.
+\subsection{Alternate Least Square (ALS)}
+An alternative way to do the same is Alternate Least Square method.\newline\newline
+In this case, we fix $\textbf{p}_{u}$ and $\textbf{q}_{i}$ alternatively while optimizing for the other. In this way, the new optimization problem becomes a \textbf{quadratic problem} and its solution has a closed form.
+

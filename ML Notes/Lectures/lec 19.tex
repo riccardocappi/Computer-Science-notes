@@ -1,0 +1,143 @@
+\chapter{Lec 19 - Recommender Systems I}
+\section{Recommender Systems}
+The goal of recommender systems is to suggest to users only the items that can be really relevant. Let's consider the following two definitions of recommender system:
+\begin{itemize}
+    \item \textbf{Wikipedia:} A recommender system is a subclass of information filtering system that seeks to predict the preference a user would give to an item.
+    \item \textbf{Handbook:} Recommender systems (RSs) are software tools and techniques that provide suggestions for items that are most likely of interest to a particular user.
+\end{itemize}
+There are many different types of Reccomender systems:
+\begin{itemize}
+    \item \textbf{Non-personalized}: they suggest the same item to all users.
+    \begin{itemize}
+        \item Most popular (it suggests the most popular item)
+        \item Highest rated
+    \end{itemize}
+    \item \textbf{Personalized:} a different recommendation may be given to different users.
+    \begin{itemize}
+        \item Content-based: the recommendation is produced using only the information related to users and items;
+        
+        \item Collaborative: the recommendation is produced by using all the \textit{historical} user-item interactions;
+
+        \item Context-aware: it exploits the additional \textbf{context} information to improve the recommendation. The context represents any situation that can influence the preferences of a user. 
+
+        \item Hybrid: it combines all the approaches.
+    \end{itemize}
+\end{itemize}
+\section{Types of feedback/interaction/rating}
+A component that characterizes a recommender system is the type of interactions that are observed.
+\begin{itemize}
+    \item \textbf{Explicit feedback}: it is a \textbf{direct} indication (usually numeric) of the relevance of an item for a user. It can be both qualitative and quantitative (e.g. number of likes/dislikes for a particular item). It is a reliable information but hard to collect since it requires an effort by the user.
+    \item \textbf{Implicit feedback:} it is inferred  by the system without user interaction, so it is easier to collect, but noisy. Examples of this feedback type are:
+    \begin{itemize}
+        \item The number of views (e.g. on a website)
+        \item The number of click
+        \item The time elapsed on a particular item
+    \end{itemize}
+\end{itemize}
+\subsection{Rating matrix}
+All the information gathered by implicit or explicit feedback need to be stored. We can use a \textbf{rating matrix} that has as many rows as the number of users and as many columns as the number of items. Each \textit{cell} of the matrix represents the rating given by the user $u$ to the item $i$ ($r_{ui}$). For example, $r_{ui}$ can either be:
+\begin{itemize}
+    \item Explicit: $r_{ui} \in \{0,1,...,5\}$
+    \item Implicit: $r_{ui} \in \{0,1\}$. It indicates if the user $u$ has already interacted with the item $i$, 0 means no information. 
+\end{itemize}
+In the real world, the majority of possible interactions are not present. In fact, the rating matrix density is typically $< 0.01\%$. For example:
+\begin{itemize}
+    \item Netflix rating matrix density $\approx 0.002\%$
+    \item MovieLens rating matrix density $\approx 0.005\%$
+\end{itemize}
+Moreover, both users activity and items popularity usually follow a \textbf{long tail distribution}. It means that there are few users that have given many ratings, while the majority of users have given few ratings, the same is valid also for items popularity.
+\section{Recommendation tasks}
+There are two main recommendation tasks:
+\begin{itemize}
+    \item \textbf{Rating prediction:} when the feedback is explicit, the recommender system aims at predicting the missing ratings in the rating matrix.
+    \item \textbf{Top-N item recommendation:} when the feedback is implicit, the recommender system aims at predicting the $N$ items the user will like the most. Given a user, a recommender system associates a relevance score to the items. This scoring will be used to rank items and make the recommendation. Specifically, the $N$ highest scored items are recommended to the users.
+\end{itemize}
+\section{Quality indicators}
+How can we measure the quality of a recommender system? For the \textit{rating prediction} case, we can check if the predicted ratings match the real ones given by the user (similar to the supervised learning task), but for the \textit{top-N} approach is not obvious. In this case, there are different quality indicators:
+\begin{itemize}
+    \item \textbf{Relevance:} recommend items that users like
+    \item \textbf{Coverage:} ability to recommend most of the items in a catalogue
+    \item \textbf{Novelty:} recommend items unknown to the user
+    \item \textbf{Diversity:} diversify the recommended items (suggest group of items that are different each other)
+    \item \textbf{Serendipity:} ability of surprising the user, that is, the ability to recommend items that users would have never been able to discover by themselves
+\end{itemize}
+There are two main paradigms to \textbf{evaluate recommender systems:}
+\begin{itemize}
+    \item \textbf{Offline:} It is based on benchmark data-sets (training set + test set) and does not require the user interaction. It cannot be used to evaluate the experience as a whole.
+    \item \textbf{Online:} users are directly involved in the evaluation that can be both qualitative and quantitative. The overall user-experience plays a role. However, users are not always consistent.
+\end{itemize}
+\subsection{Online evaluation}
+This evaluation can be performed in two different ways:
+\begin{itemize}
+    \item Direct user feedback: users directly provide a feedback about the recommendation through questionnaires or self-reports.
+    \item A/B testing: the recommender is tested against a baseline (usually a previous version of the system) on two sets of users; a control set that uses the baseline and a variation set that uses the new system. The improvements are evaluated in terms of standard metric or through users feedback. 
+\end{itemize}
+\subsection{Offline evaluation}
+Usually, offline evaluation methods work by dividing the rating matrix in two parts: training set and test set. How can we perform this split? There are two alternatives:
+\begin{itemize}
+    \item Divide users in training users and testing users. Then, the testing users partition is split into training ratings and test ratings. It avoids the cold-start problem, i.e., no user are unknown at testing time.
+    \item The rating matrix is split into training ratings and testing ratings (can have cold-start). When available, it is good practice to split training-set ratings based on the timestamp.  
+\end{itemize}
+\subsubsection{Offline evaluation for rating prediction}
+We have at least 3 different ways to measure how good the predicted ratings are.\newline\newline
+Given the predicted ratings $\hat{r}_{ui}$, for ($u,i$) in the test-set ($Te$), the usual evaluation metrics are:
+\begin{itemize}
+    \item \textbf{MAE (Mean Absolute Error)} = $\frac{1}{|Te|}\sum_{(u,i)\in Te}|r_{ui} - \hat{r}_{ui}|$
+    \item \textbf{MSE (Mean Squared Error)} = $\frac{1}{|Te|}\sum_{(u,i)\in Te}(r_{ui} - \hat{r}_{ui})^{2}$. The problem of this measure is that the results are not comparable with the real ratings.
+    \item \textbf{RMSE (Root Mean Squared Error)} = $\sqrt{\frac{1}{|Te|}\sum_{(u,i)\in Te}(r_{ui} - \hat{r}_{ui})^{2}}$
+\end{itemize}
+
+\subsubsection{Offline evaluation for top-N approach}
+In this case we can use the typical evaluation metrics, for example \footnote{legend: $TP$: True Positives, $FN$: False Negatives, $FP$: False Positives}:
+\begin{itemize}
+    \item \textbf{Recall}
+    \[\frac{\# relevant \, recommended \,items}{\# relevant \, items} = \frac{TP}{FN + TP}\]
+    \item \textbf{Precision}
+    \[\frac{\# relevant \, recommended \,items}{\# recommended \, items} = \frac{TP}{FP + TP}\]
+\end{itemize}
+Note that all these metrics can be limited to the first $k$ retrieved items to give more emphasis to the top of the recommended list.\newline\newline
+Other evaluation methods are:
+\begin{itemize}
+    \item \textbf{AUC (Area Under Curve)}
+    \[\frac{1}{N^{+}N^{-}}\sum_{i}\sum_{j}[\![s(i) > s(j)]\!]\]
+    where $N^{+}$ are the relevant items and $N^{-} = N - N^{+}$. $s(i)$ is the score given by the recommender to the item $i$ of the recommended list. It computes the number of miss ordered pairs of items in the ranking list. Note that making a mistake at the top of the list is the same of making a mistake at the end. For this reason, this measure is not the best choice.
+    \item \textbf{AP (Average Precision)}
+    \[\frac{\sum_{k}Precision@k\cdot rel(k)}{\# relevant \, items}\]
+    It computes the average of the precision at a given level $k$. $rel(k) \in \{0,1\}$ indicates whether the k-th item is relevant or not. As for precision and recall it can be truncated at level $k$.
+    \item \textbf{DCG (Discounted Cumulative Gain)}
+    \[\sum_{i=1}^{p}\frac{rel_{i}}{log_{2}(i+1)}\]
+    where $rel_{i}$ is the graded relevance of the item $i$, usually $\in \{0,1\}$. This quantity decreases as the position $i$ of the recommended list increases. We have a high quality recommendation when we have all the relevant items proposed at the top of the list.
+    \item \textbf{MRR (Mean Reciprocal Rank)}
+    \[\frac{1}{|Q|}\sum_{i \in Q}\frac{1}{rank_{i}}\]
+    where $Q$ is the set of relevant items. It averages the reciprocal of the positions that the relevant items have in the ranked list produced by the recommender. Similar to DCG, it is useful at top ranks.
+\end{itemize}
+As we said before, there are other quality indicators beyond relevance. For example, \textbf{Diversity} and \textbf{Novelty}:
+\begin{itemize}
+    \item \textbf{Diversity:}
+    \[\frac{\sum_{i \in R}\sum_{j \in R,j \neq i} 1 - sim(i,j)}{m(m-1)}\]
+    where $R$ is the retrieved set of $m$ items and $sim$ is a similarity measure. This quantity is high when the similarity between all the possible pairs in the recommendation is low.
+    \item \textbf{Novelty:}
+    \[\frac{\sum_{i \in TP}log_{2}\left(\frac{1}{popularity(i)}\right)}{|TP|}\]
+    Approximately, the inverse of the popularity of the retrieved items.
+\end{itemize}
+\section{Non-personalized RS}
+Non-personalized recommender systems are usually used as baseline to compare other systems.
+\begin{itemize}
+    \item \textbf{Most popular:} it recommends the item with the highest number of ratings $k$. If the user $u$ has already interacted with item $k$ (already given a rating), it will be recommended the most popular item after $k$.
+    \item \textbf{Highest rated:} it recommends the item with the highest average rating. Usually, a normalization factor is added to the average in order to give a bias towards popular items.
+\end{itemize}
+\section{Other RS approaches}
+Let's have a look at other standard RS approaches:
+\begin{itemize}
+    \item \textbf{Content Based (CB):} recommend the most similar items to the ones the user liked in the past. For example, same genre (movies), same artist (song), etc...
+    \item \textbf{Collaborative Filtering (CF):} recommend to a user the items liked by similar users, or vice versa, items that are similar to the ones liked in the past. In this case, what is changing with respect to the Content Based approach is how the similarity between items or users is measured:
+    \begin{itemize}
+        \item item-item similarity: two items are similar if they share many users.
+        \item user-user similarity: two user are similar if they share many ratings.
+    \end{itemize}
+    Note that in these approaches only the interactions are used to compute similarities. No specific users and items characteristics are used.
+    \item \textbf{Hybrid approaches:} Content Based approaches tend to perform better than Collaborative Filtering when there is no much \textit{history} about interactions. On the other hand, when we have a lot of information about user-item interactions, than Collaborative Filtering approaches perform better. Hybrid approaches tend to take advantage of the strength of the different methods while mitigate their weakness.
+    \item \textbf{Context-aware (CARS):} In these cases the assumption is that the quality of a recommendation depends on the user (and item) state. The recommender uses contextual information to tune the recommendation, for example, the mood, the weather, the time, the presence of kids, etc...
+\end{itemize}
+
+

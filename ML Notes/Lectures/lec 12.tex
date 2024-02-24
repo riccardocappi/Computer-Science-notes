@@ -1,0 +1,100 @@
+\chapter{Lec 12 - Preprocessing}
+
+\section{Supervised learning pipeline}
+The supervised learning pipeline can be summarized as follows:
+\begin{enumerate}
+    \item Analysis of the problem (Classification, Regression, ...)
+
+    \item Collection, analysis and cleaning data
+
+    \item Pre-processing and managing missing values
+
+    \item Study of correlation between variables 
+
+    \item Feature selection/weighting/learning
+
+    \item Choice of the predictor and model selection
+
+    \item Test
+\end{enumerate}
+Some of the most common objects that we can find in machine learning are:
+\begin{itemize}
+    \item \textbf{Vectors} (Set of values)
+    \item \textbf{Strings}
+    \item \textbf{Sets and Bags}: for example, the set of terms in a document or their frequency
+    \item \textbf{Tensors}: for example, images and video
+    \item \textbf{Trees and graphs}
+\end{itemize}
+The easiest way to represent these objects is to map them in a vectorial representation.\newline\newline
+Features values can be divided in two classes: \textbf{Categorical} and \textbf{Quantitative}:
+\begin{itemize}
+    \item Categorical or symbolic features
+    \begin{itemize}
+        \item Nominals: They are used for naming or labeling variables, without any quantitative value. There is usually no intrinsic ordering to nominal data.
+
+        \item Ordinals: Is a type of categorical data with an order.
+    \end{itemize}
+
+    \item Quantitative and numeric features:
+    \begin{itemize}
+        \item Intervals (Enumerables)
+        \item Ration (Real values)
+    \end{itemize}
+\end{itemize}
+Let's see how to encode categorical and quantitative variables into a vector.
+
+\section{Encoding categorical or symbolic variables}
+One of the most common method to encode a categorical variable into a vector is the \textbf{OneHot Encoding}. This technique allows you to represents categorical variables in a vector with as many components as the number of possible values for the variable.\newline\newline
+For example, let's say that we want to encode a variable corresponding to the brand of a car. The possible values that an instance can take are: \textit{(Fiat, Toyota, Ford)}. The OneHot encoding of an instance having \textit{Toyota} as brand value could be the following: $[0, 1, 0]$. Basically, it's a vector where we set to one the component corresponding to the value of the instance.
+
+\section{Encoding of continuous variables}
+In this case, it is more difficult to find a good mapping. Therefore, the features are typically transformed to obtain values \textit{comparable} with other features.\newline\newline
+Given a matrix of instances (training set), for each feature $j$, let $\hat{x}_{j} = \frac{1}{n}\sum_{i=1}^{n}x_{ij}$ be the average value of the current feature and let $\sigma_{j} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_{ij} - \hat{x}_{j})^{2}}$ be the standard deviation of $j$. We can apply the following transformations:
+\begin{itemize}
+    \item Centering: $c(x_{ij}) = x_{ij} - \hat{x}_{j}$. For each value $x_{ij}$ we compute $c(x_{ij})$ which is equal to the difference between the value and the average of the corresponding feature.
+
+    \item Standardization: $s(x_{ij}) = \frac{c(x_{ij})}{\sigma_{j}}$. We want the \textit{columns} (features) of the matrix to have mean equals to 0 and variance equals to 1.
+
+    \item Scaling to a range: $h(x_{ij}) = \frac{x_{ij} - x_{min j}}{x_{max j} - x_{min j}}$. Each value is scaled in a range between 0 and 1.
+
+    \item Normalization: $g(\textbf{x}) = \frac{\textbf{x}}{||\textbf{x}||}$. In this case, we don't work over features but we want to normalize the instances (rows).
+\end{itemize}
+The python module \textit{sklearn} provides several methods to perform this kind of pre-processing.
+
+\subsection{K-Nearest Neighbors}
+K-Nearest Neighbors is a simple classification algorithm where a test example is classified with the majority class of its k-neighbors in the training set.\newline\newline
+When the instances are \textbf{normalized} we can define the squared distance between them in terms of dot-product:
+\[||\textbf{x} - \textbf{z}||^{2}\]
+\[= ||\textbf{x}||^{2} + ||\textbf{z}||^{2} - 2\langle \textbf{x}, \textbf{z}  \rangle\]
+Since the norm of the instances is equal to 1, it follows that:
+\[= 2 - 2\langle \textbf{x}, \textbf{z}  \rangle\]
+So, with normalized data, the distance between two instances is inversely proportional to their dot-product.
+
+\section{Feature selection and feature extraction}
+Feature \textbf{selection} is the reduction of the dimensionality of the features obtained by removing irrelevant or redundant features. The interpretability of the model is maintained.\newline\newline
+Feature \textbf{extraction} is the reduction of the dimensionality of the features obtained by combining the original features (e.g. PCA). Generally, the interpretability of the model is lost.
+
+\subsection{Feature selection}
+The top reasons to use feature selection are:
+\begin{itemize}
+    \item It enables the machine learning algorithm to train faster
+
+    \item It reduces the complexity of a model and makes it easier to interpret.
+
+    \item It improves the accuracy of a model if the right subset is chosen.
+
+    \item It reduces over-fitting.
+\end{itemize}
+Feature selection methods can be divided in 3 classes:
+\begin{itemize}
+    \item \textbf{Filter methods:} They perform feature selection before applying the predictor. They use an efficient scoring function (e.g. Mutual information, Chi squared, Information gain) that determines the usefulness of a given set of features.
+
+    \item \textbf{Wrapped methods:} The predictor is evaluated on a hold-out sample using subset of different features. Then, the subset with highest score is chosen.
+
+    \item \textbf{Embedded methods:} The selection of features occurs in conjunction with the training of the model, for example, by modifying the objective function to be optimized. 
+\end{itemize}
+
+\subsection{Feature extraction (PCA)}
+\textbf{Principal Component Analysis (PCA)} converts a set of instances with possibly related features into corresponding values on another set of linearly unrelated features (principal components).\newline\newline
+\textbf{Neural Networks} can also be seen as a particular way to perform feature extraction on their hidden layers. In fact, the output values of one of the hidden layers can be considered as a new representation of the original data.
+

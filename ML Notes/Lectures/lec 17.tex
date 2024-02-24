@@ -1,0 +1,114 @@
+\chapter{Lec 17 - Ensemble Learning}
+
+\section{Ensemble Learning - general idea}
+The idea of ensemble learning is to get predictions from multiple models and aggregate them. In the classification case, an \textbf{ensemble} of classifiers (base/weak learners) is a set of classifiers whose individual decisions are combined in some way (e.g. majority voting) to classify new examples.\newline\newline
+We need to motivate why combining classifiers should perform better than individual classification. We will try to do it in two ways:
+\begin{itemize}
+    \item Intuitively: following the Dietterich's "\textit{3 reasons why}"
+    \begin{itemize}
+        \item Statistical;
+        \item Computational;
+        \item Representational;
+    \end{itemize}
+    \item Theoretically: bias-variance trade-off.
+\end{itemize}
+
+\subsection{Statistical reason}
+Without sufficient data, many hypotheses can have the same level of accuracy on the training data. By "\textit{averaging}" the classifications of several good classifiers the risk of choosing the wrong classifier is reduced. The idea is that if you average several classifications is more likely to find an hypothesis that better approximates the target function.
+
+\subsection{Computational reason}
+Even with enough training examples, learning algorithms may stuck in local optima. An ensemble constructed by running the local search from many different \textit{starting points} (e.g. different initial weights values of Neural Networks), may provide a better approximation of the target function.
+
+\subsection{Representational reason}
+In some applications of machine learning the target function can't be represented by any of the hypotheses in $H$. By forming weighted sums of hypotheses drawn from $H$, it may be possible to expand the space of representable functions.
+
+\section{Bias-Variance decomposition}
+Given $y=f(x)+\epsilon$ where $f$ is the target function and $\epsilon$ is the noise, and given an hypothesis $g$, the squared error can be decomposed as:
+\[E[(y - g(x))^{2}] = bias^{2} + variance + noise^{2}\]
+\begin{itemize}
+    \item $noise^{2}$ is the \textbf{irreducible} error;
+    \item $bias^{2}$ = $(E[g(x)] - f(x))^{2}$ where $E[g(x)]$ is the expected value of the hypothesis $g$. The bias term shows how much the average of the chosen model differs from the real target function.
+    \item $variance$ = $E[(g(x) - E[g(x)])^{2}]$ it shows how much different models differ from each other.
+\end{itemize}
+Generally, averaging multiple hypotheses reduces variance, but can also reduce the bias. This is because if you average multiple hypotheses, the model is more robust to the change of training set.
+
+\section{Types of ensemble}
+There are two types of ensemble:
+\begin{itemize}
+    \item \textbf{Parallel:} These methods take advantage of the \textbf{independence} between the base learners.
+    \item \textbf{Sequential:} These methods takes advantage of the \textbf{dependence} between the base learners since the overall performance can be boosted in an incremental way. This approach is usually called \textbf{boosting}.
+\end{itemize}
+\subsection{Parallel ensemble}
+Suppose that each base (binary) classifier $h_{i}$ has an \textbf{independent generalization error}, i.e., $P(h_{i}(\textbf{x}) \neq f(\textbf{x})) = \epsilon$. It means that the error of one of the classifiers on a particular instance in the training set doesn't say anything about the error of another classifier on the same instance. \newline\newline
+We can combine $T$ of these classifiers according to:
+\[H(\textbf{x}) = sign\left(\sum_{i=1}^{T}h_{i}(\textbf{x})\right)\]
+That is, taking the \textbf{majority voting}. Note that $h_{i}$, since it is a binary classifiers, can only compute either $-1$ or $+1$. Basically, $H(\textbf{x})$ is $> 0$ if the number of \textit{positive} predictions ($+1$) is greater than the number of \textit{negative} predictions ($-1$). Since we are using the $sign$ function, $H$ makes an error when $> 50\%$ of its base classifiers make errors. Therefore, by \textbf{Hoeffding inequality} the generalization error of the ensemble is:
+\[P(H(\textbf{x}) \neq f(\textbf{x})) = \sum_{k=0}^{T/2}{T \choose k}(1 - \epsilon)^{k} \epsilon^{T-k} \leq e^{-\frac{T}{2}(2\epsilon - 1)^{2}}\]
+It shows that the error reduces exponentially as the ensemble size $T$ increases.\newline\newline
+unfortunately, this is not always true. The problem is in the assumption that each classifier has an independent generalization error. In fact, similar hypothesis tend to make errors on the same examples. The goal of parallel ensemble is to build hypotheses which are as independent as possible.\newline\newline
+One way to achieve independence of models is by using \textbf{bootstrapping}, that is, build new training sets by sampling with replacement $M$ overlapping groups of instances of the same size. The idea is to train a different model for each sample and combine the results.\newline\newline 
+Another method is \textbf{feature randomization:} each model sees a random subset of features.\newline\newline
+\subsubsection{Bagging}
+The first approach based on this intuition is \textbf{bagging}:
+\begin{enumerate}
+    \item Create $k$ bootstrap samples:
+    \item Train a distinct classifier on each sample;
+    \item Classify new instances by majority voting / average.
+\end{enumerate}
+For example, considering a linearly separable training set, we can train a perceptron on each bootstrap sample. At the end, we'll obtain a number of perceptrons equals to the number of samples and we can take the majority voting of their predictions.\newline\newline
+Ideally, bagging eliminates variance while keeping the bias almost unchanged. However, in practice, weak learners are not independent, so bagging tends to reduce variance and increase bias. In fact, bagging fails when models are very similar (not independent enough). This happens if the learning algorithm is stable, that is, it doesn't change much after changing a few instances. If we have high-bias models and we want to combine them, the result tends to be bad. These methods are more suitable when we want to minimize the variance error. For example, bagging is effective when used with Decision Trees, but not effective with SVM. This is because SVM models are more robust to the change of training set; variance of SVM models is lower than the variance of Decision Trees models.\newline\newline
+Note that combining Decision Trees does not always result in another Decision Tree (extended representation of hypothesis space).
+\subsubsection{Random Forests}
+A method based on bagging and Decision Trees is \textbf{Random Forests:}
+\begin{enumerate}
+    \item Use $k$ bootstrap samples to train $k$ different Decision Trees (DTs);
+    \item At each node, pick a subset of features at random (it allows us to have more different DTs);
+    \item Aggregate the predictions of each tree to make the classification decision.
+\end{enumerate}
+
+\subsection{Sequential ensemble (boosting)}
+The intuition behind \textbf{boosting} is the following:
+\begin{itemize}
+    \item Use the training set to train a simple predictor;
+    \item Re-weight the training examples giving more weight to examples that were wrongly classified;
+    \item Repeat $n$ times;
+    \item Combine the simple hypotheses into a single accurate predictor.
+\end{itemize}
+Boosting reduces \textbf{bias} (zero error on training set) by making each classifier focus on previous mistakes. It assumes that weak learners are slightly better than random guessing ($accuracy = 0.5 + \epsilon$). Basically, we have to choose weak learners that have an accuracy $> 0.5$. We can get classifiers that satisfy this property by using sequential training with examples re-weighting:
+\[H(\textbf{x}) = sign\left(\sum_{t}\alpha_{t}h_{t}(\textbf{x})\right)\]
+We combine the predictions of weak learners by weighting them, at each iteration $t$, by a factor $\alpha$.\newline\newline
+The most representative model based on this technique is \textbf{AdaBoost}.
+\subsubsection{AdaBoost (Adaptive Boosting)}
+The general idea of AdaBoost is the following: At each iteration $t$ the training set is re-weighted ($D_{t}$), giving larger weights to examples that were wrongly classified and train a new weak classifier.\newline\newline
+Weak learners need to maximize \textbf{weighted accuracy}, that is, minimize weighted error $\epsilon_{t}$:
+\[\epsilon_{t} = P_{i \sim D_{t}} = \sum_{i}D_{t}(i)[\![h_{t}(\textbf{x}_{i}) \neq y_{i}]\!]\]
+where $[\![\cdot]\!]$ is a function that computes 1 if $\cdot$ is true and 0 otherwise. Once $\epsilon_{t}$ is computed, the weight of each classifiers is computed according to its weighted error:
+\[\alpha_{t} = \frac{1}{2}log\frac{1 - \epsilon_{t}}{\epsilon_{t}}\]
+\begin{itemize}
+    \item when $\epsilon_{t}$ is closed to 0.5, $\alpha_{t}$ tends to 0.
+    \item when $\epsilon_{t}$ is closed to 0, $\alpha_{t}$ tends to $\infty$
+\end{itemize}
+The training set is weighted using an exponential rule: \textit{harder} examples are weighted exponentially more than \textit{easy} ones.\newline\newline
+It can be shown that repeating the whole procedure multiple times is a different way to minimize the following loss function:
+\[E = \sum_{i=1}^{n}e^{-y_{i}H(\textbf{x}_{i})}\]
+where $H(\textbf{x}) = \sum_{t}\alpha_{t}h_{t}(\textbf{x})$.\newline\newline
+Many iterations of AdaBoost generate more and more complex hypothesis. Despite that, usually, AdaBoost does not over-fit. In fact, test error continues to drop even after training error reaches 0.
+
+\subsubsection{When/why does boosting works?}
+\begin{itemize}
+    \item Bagging may fail if the considered weak learners are wrong in the same regions. Boosting solves the problem by concentrating the efforts on those regions.
+    \item Boosting works well when we have high-bias models. By combining them, we get more expressive classifiers. Hence, boosting is a \textbf{bias-reduction technique}.
+    \item Since boosting focuses the efforts on hard examples, it is very sensitive to noise.
+    \item The classification of new examples is done by evaluating all the hypotheses and combining them. So, it may be inefficient.
+\end{itemize}
+\section{Stacking}
+Both bagging and boosting assume that we have a single base learning algorithm (set of homogeneous weak learners). \textbf{Stacking} is a technique for combining an arbitrary set of learning models using a \textbf{meta-model}.\newline\newline
+The idea is to use a set of non-homogeneous models to get a different data representation. Then, we combine all the predictions by training a meta-model that takes as input the output of the predictors.\newline\newline
+Any supervised model can be used as a meta-model, but the common choices are simple models. This is because we don't want to increase too much the complexity of the entire system:
+\begin{itemize}
+    \item Averaging (regression)
+    \item Majority voting (classification)
+    \item Linear regression (regression)
+    \item Logistic regression (classification)
+\end{itemize}
+Stacking works best when the base model have complementary strengths and weakness, that is, different inductive biases.

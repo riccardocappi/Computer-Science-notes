@@ -1,0 +1,48 @@
+\documentclass{book}
+\usepackage{graphicx} % Required for inserting images
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{subfig}
+\graphicspath{ {./images/} }
+\usepackage{pifont}
+\usepackage{hyperref}
+\usepackage{stackengine}
+\newcommand\xrowht[2][0]{\addstackgap[.5\dimexpr#2\relax]{\vphantom{#1}}}
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usepackage{geometry}
+\newgeometry{
+left=   1 in,
+bottom= 1.5 in,
+right=  1 in,
+top=    1 in
+}
+
+
+\title{V\&C Systems Notes}
+\author{Riccardo Cappi}
+\date{January 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Disclaimer}
+These are just my notes that I used to prepare for the exam. So, probably, there will be both spelling and conceptual errors. Feel free to contact me at riccardo.cappi@studenti.unipd.it if you find any errors. This is the github repo where you can find the latex files of the notes: \url{https://github.com/riccardocappi/Computer-Science-notes}\\\\
+Unfortunately the notes for this course are \textbf{incomplete} :(
+
+\tableofcontents
+
+\include{Lectures/ml I}
+\include{Lectures/ml II}
+\include{Lectures/filters I}
+\include{Lectures/filters II}
+\include{Lectures/LIF I}
+\include{Lectures/LIF II}
+\include{Lectures/BOvW}
+\include{Lectures/cnn}
+
+\end{document}

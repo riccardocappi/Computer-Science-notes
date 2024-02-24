@@ -1,0 +1,117 @@
+\chapter{Lec 16 - Evaluation rule}
+
+\section{Addition term}
+Before talking about the evaluation rules, let's add the $+$ operator to our expressions grammar:
+\begin{grammar}
+    <e> ::= <x>
+    \alt <λx.e> 
+    \alt <e e>
+    \alt <Let x = e in e>
+    \alt <e + e>
+\end{grammar}
+The type-checking rule for the addition (only between integers) is the following:
+\[
+    \infer{\Gamma \vdash e_{1} + e_{2}:int}{
+    \begin{gathered}
+        \Gamma \vdash e_{1}: int \\
+        \Gamma \vdash e_{2}:int
+    \end{gathered}}
+\]
+
+\section{Evaluation rules}
+In the C language when a program is compiled the compiler checks syntax and types and produces an executable. Then, when we \textbf{run} the program, the executable is \textbf{evaluated}. Conversely, in python the program is just evaluated, without compiling it.\newline\newline
+Let's talk about evaluation of our simple form of expressions.\newline\newline
+In the world of evaluation the scope is defined as follows:
+\begin{grammar}
+    <Δ> ::= Ø
+    \alt Δ,(x ⟶ v)
+\end{grammar}
+The scope $\Delta$ can either be:
+\begin{itemize}
+    \item empty
+    \item extended with a binding for a variable $x$ which computes a \textbf{value} $v$ 
+\end{itemize}
+$\Gamma$ binds variables to types, while $\Delta$ binds variables to values.\newline\newline
+The evaluation rule for the $+$ term previously defined is the following:
+\[ \infer{\Delta \vdash e_{1} + e_{2} \rightarrow v}{
+\begin{gathered}
+    \Delta \vdash e_{1} \rightarrow v_{1}\\
+    \Delta \vdash e_{2} \rightarrow v_{2} \quad v = v_{1} + v_{2} 
+\end{gathered}}\]
+In a scope $\Delta$, the expression $e_{1} + e_{2}$ computes v if, in the same scope $\Delta$, $e_{1}$ computes $v_{1}$, $e_{2}$ computes $v_{2}$ and $v = v_{1} + v_{2}$ where the $+$ operator is the one defined among integers. So, we first evaluate $e_{1}$, then $e_{2}$ and the result is the sum of the two. Note that $v_{1}$ and $v_{2}$ must be numbers.
+\subsection{Evaluation of lambdas}
+If we write a lambda in the F\# interactive window it will be evaluated as follows:
+\begin{lstlisting}[style=FSharpStyle]
+    fun x -> x + 1;;
+    val it : x:int -> int
+\end{lstlisting}
+The lambda can't be evaluated until it is called by passing an argument for the parameter $x$. So, in order to define an evaluation rule for lambdas, we need some kind of memory representation that stores the lambda \textbf{blocked} with the scope where it is defined (lexical scoping). This structure is called \textbf{closure}. Then, the evaluation rule is:
+\[
+\infer{\Delta \vdash \lambda x.e \rightarrow <\lambda x.e;\Delta>}{\emptyset}\]
+where $<\lambda x.e;\Delta>$ is a pair composed by the lambda and the original scope where the lambda is defined (closure).
+\subsection{Values definition}
+A value $v$ is defined by the following BNF grammar:
+\begin{grammar}
+    <v> ::= lit
+    \alt < λx.e ; Δ >
+\end{grammar}
+$v$ can either be:
+\begin{itemize}
+    \item a literal (4, true, false, 8.9, ...)
+    \item a closure: it consists of a lambda expression and the scope where it is defined.
+\end{itemize}
+
+\subsection{Evaluation rules of the other expression terms}
+\begin{itemize}
+    \item \textbf{Variables identifiers:}
+    \[
+    \infer{\Delta \vdash x \rightarrow v}{
+    \begin{gathered}
+        x \in domain(\Delta)\\
+        \Delta(x) = v
+    \end{gathered}}
+    \]
+
+    \item \textbf{Let binding:}
+    \[
+    \infer{\Delta \vdash let \, x = e_{1} \, in \, e_{2} \rightarrow v_{2}}{\begin{gathered}
+        \Delta \vdash e_{1} \rightarrow v_{1}\\
+        \Delta, (x\rightarrow v_{1}) \vdash e_{2} \rightarrow v_{2}
+    \end{gathered}}
+    \]
+    Let's consider the following F\# code:
+    \begin{lstlisting}[style=FSharpStyle]
+        let a = 4 in a
+        //val it : int = 4
+    \end{lstlisting}
+    In this case $e_{1} = 4$ and it is evaluated to 4. Then, the variable $a$ is associated to the evaluated value ('4') and it is added to the scope $\Delta, (a \rightarrow 4)$. Finally, $e_{2}$ is evaluated: since $e_{2} = a$ and $a \rightarrow 4$, the whole expression produces 4.
+
+    \item \textbf{Application:}
+    \[
+    \infer{\Delta \vdash e_{1} \, e_{2} \rightarrow v_{0}}{\begin{gathered}
+        \Delta \vdash e_{1} \rightarrow <\lambda x.e_{0};\Delta_{0}>\\
+        \Delta \vdash e_{2} \rightarrow v_{2}\\
+        \Delta_{0}, (x \rightarrow v_{2}) \vdash e_{0} \rightarrow v_{0} 
+    \end{gathered}}
+    \]
+    \begin{itemize}
+        \item the left part ($e_{1}$) of an application must produce a closure
+        \item the right part ($e_{2}$) can produce anything
+    \end{itemize}
+    This is $\beta$-reduction, that is, how applications works at run-time in functional languages.\newline\newline
+    The whole application produces the evaluation of the body $e_{0}$ of the lambda defined in the original environment $\Delta_{0}$, adding a binding for the parameter $x$ to the value that $e_{2}$ computes.
+    \begin{lstlisting}[style=FSharpStyle]
+        let k = 1
+
+        let f = fun x -> x + k
+                
+        let n = f 2
+        //val n : int = 3
+    \end{lstlisting}
+    When we call $f$:
+    \begin{itemize}
+        \item The evaluation of $f$ produces a closure with the scope having $k\rightarrow 1$
+        \item $e_{2}=2 \rightarrow 2$
+        \item $x$ is bound to 2 ($\Delta,(x\rightarrow 2)$). So, the application produces 3
+    \end{itemize}
+\end{itemize}

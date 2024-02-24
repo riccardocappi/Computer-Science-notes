@@ -1,0 +1,171 @@
+\chapter{Lec 09 - Higher-order polymorphic functions in F\#}
+\section{Higher-order functions}
+In functional languages, functions are actually values. This means that, like all other values of the language, they can be:
+\begin{itemize}
+    \item memorized;
+    \item passed as a parameters to a function;
+    \item returned by a function;
+\end{itemize}
+An \textbf{higher-order function} is a function that takes one or more functions as parameters and/or returns a function as a result\newline
+\textbf{Example of higher-order functions for lists:} \newline \newline
+\textbf{map function:}
+\begin{lstlisting}
+let rec map (f, l) = 
+    match l with
+    | [] -> []
+    | x::xs -> f x :: map (f, xs)
+\end{lstlisting}
+This function has type ('a $\rightarrow$ 'b) * 'a list $\rightarrow$ 'b list. In fact, it takes as input a function from 'a to 'b and a list of elements of type 'a, and it returns a list of elements of type 'b. Basically this function transforms each element of a given list into another element according to a function \textbf{f}.
+\begin{lstlisting}
+let string_to_ints = map( (fun s -> String.length s), ["Hello"; "World"])
+\end{lstlisting}
+The code above transforms each string of the list \textit{["Hello";"World"]} into an int that is the size of the string (by using the function belonging to the String module of F\# standard library String.length). The resulting list string\_to\_ints is the following:
+\begin{lstlisting}
+val string_to_ints : int list = [5; 5]
+\end{lstlisting}
+Note that the previous syntax can be replaced by the following one:
+\begin{lstlisting}
+let string_to_ints = map(String.length, ["Hello"; "World"])
+\end{lstlisting}
+And why is that? Let's reason about types. \newline
+Consider the lambda 
+\[\lambda x.fx\]
+Let's say that $x$ has type $\tau$ ($x:\tau$) and $f:\tau \rightarrow \sigma$. The lambda $\lambda \underbrace{x}_\tau.\underbrace{fx}_\sigma$ has the same type of $f$ ($\tau \rightarrow \sigma$), so we can say that $\lambda x.fx \equiv f$. \newline
+Given a function $f$, adding a parameter and forwarding it to the function is called \textbf{$\eta$-expansion}
+\[f\]
+\[\lambda x.fx\]
+\subsection{Currying}
+How can we define functions with two parameters ? We have two different options:
+\begin{itemize}
+    \item
+    \begin{lstlisting}
+let f1 = fun(x,y) -> x + y
+    \end{lstlisting}
+    
+    \item 
+    \begin{lstlisting}
+let f2 = fun x -> (fun y -> x + y)
+    \end{lstlisting}
+\end{itemize}
+With the first method we are just defining a function that takes two integer numbers as parameters and produces the sum of the two. With the second one we are nesting lambdas. In fact, \textbf{f2} is a function that takes an integer number as input and \textit{returns} another function that takes an integer as input and produces the sum of the two numbers. From the point of view of types:
+\begin{lstlisting}
+val f1 : x:int * y:int -> int
+val f2 : x:int -> y:int -> int
+\end{lstlisting}
+Defining functions as expressions formed by nested lambdas is called \textbf{currying}.\newline
+The syntax to call functions \textbf{f1} and \textbf{f2} defined above is the following
+\begin{lstlisting}
+let call_uncurried = f1(3,4)
+let call_curried = f2 3 4
+
+val call_uncurried : int = 7
+val call_curried : int = 7
+\end{lstlisting}
+As you can see, when we call \textbf{f2}, parameters are not between round brackets but they are separated by a space. \newline
+Currying is useful because it allows you to perform \textbf{partial evaluation}. Let's consider an example:
+\begin{lstlisting}
+let add_something_to_3 = f2 3
+let ten = add_something_to_3 7
+let five = add_something_to_3 2
+let seven = add_something_to_3 4
+
+val add_something_to_3 : (int -> int)
+val ten : int = 10
+val five : int = 5
+val seven : int = 7
+\end{lstlisting}
+With the first expression we are \textit{partially} applying \textbf{f2}. Basically, \textbf{add\_something\_to\_3} is a function that takes an integer as parameter and adds that number to 3.\newline
+Now let's go back to the \textbf{map} function mentioned before and let's change the syntax in order to define it with the currying syntax:
+\begin{lstlisting}
+let rec map f l = 
+    match l with
+    | [] -> []
+    | x :: xs -> f x :: map f xs
+
+val map : f:('a -> 'b) -> l:'a list -> 'b list
+\end{lstlisting}
+The only thing that is changed is how you write parameters (now separated by a space).
+\begin{lstlisting}
+let map_string_length = map(String.length)
+let map_int_squares = map(fun x-> x*x)
+let map_int_times_2 = map(fun x-> x*2)
+
+map_string_length(["Hello"; "World"])
+//Result: val it : int list = [5; 5]
+
+map_string_length(["Hello";"I'm";"Riccardo"])
+//Result: val it : int list = [5; 3; 8]
+
+map_int_squares([1;2;3;4;5])
+//Result: val it : int list = [1; 4; 9; 16; 25]
+
+map_int_times_2([5;4;3;2;1])
+//Result: val it : int list = [10; 8; 6; 4; 2]
+\end{lstlisting}
+In the code above we defined the \textit{behavior} of three functions (\textbf{map\_string\_length}, \textbf{map\_int\_squares}, \textbf{map\_int\_times\_2}) by partially applying the function \textbf{map}.
+\subsection{Polymorphism and Currying}
+Let's consider the following expression:
+\begin{lstlisting}
+let map_id = map id
+\end{lstlisting}
+where \textbf{id} is the identity function and it is \textbf{polymorphic} ('a $\rightarrow$ 'a). If you write this line of code, the F\# compiler will give you this error: \textit{Value restriction. The value 'map\_id' has been inferred to have generic type val map\_id : ('\_a list $\rightarrow$ '\_a list) Either make the arguments to 'map\_id' explicit or, if you do not intend for it to be generic, add a type annotation.} This is because F\# doesn't allow you to produce new polymorphic functions \textbf{from} polymorphic functions unless you explicitly \textbf{$\eta$-expand} it or put an explicit type annotation. F\# enforces this restriction to avoid common programming errors when dealing with higher-order polymorphic functions.\newline
+The solution is to write \textbf{map\_id} function as follows (\textbf{$\eta$-expansion}):
+\begin{lstlisting}
+let map_id = fun x -> map id x
+//Type: val map_id : x:'a list -> 'a list
+\end{lstlisting}
+That is the same of:
+\begin{lstlisting}
+let map_id x = map id x 
+\end{lstlisting}
+\subsection{Other examples of higher-order functions}
+\textbf{Filter function:}
+\begin{lstlisting}
+let rec filter f l = 
+    match l with
+    | [] -> []
+    |x :: xs -> if f x then x :: filter f xs else filter f xs
+
+//Type: val filter : f:('a -> bool) -> l:'a list -> 'a list
+\end{lstlisting}
+This function filters a list of elements of type 'a, according to a predicate \textbf{f} (function that returns a boolean), and produces a new list of elements of type 'a composed by the elements that satisfy that predicate.
+\begin{lstlisting}
+let ex1 = filter(fun x -> x > 25)[1 .. 30]
+
+// Result: val ex1 : int list = [26; 27; 28; 29; 30]
+\end{lstlisting}
+\textbf{Sum function:}
+\begin{lstlisting}
+let rec sum_ints l =
+    match l with
+    | [] -> 0
+    | x :: xs -> x + sum_ints xs
+
+let s1 = sum_ints [1;2;3]
+//Result: val s1 : int = 6
+\end{lstlisting}
+This function performs the sum of all the elements of a list of integers. Obviously it is monomorphic, because it only works with integers lists, but we can make it polymorphic in the following way:
+\begin{lstlisting}
+let rec sum (+) zero l =
+    match l with
+    | [] -> zero
+    | x :: xs -> x + sum (+) zero xs
+
+//Type: val sum : op_Addition:('a -> 'b -> 'b) -> zero:'b -> l:'a list -> 'b
+
+let s2 = sum (+) 0.0 [1.0;2.22;3.65;4.45]
+//Result: val s2 : float = 11.32
+\end{lstlisting}
+The parameters of this function are:
+\begin{itemize}
+    \item A function named $(+)$ that takes a 'a element and a 'b element and produces a 'b element. Note that, within the scope of the function, we use this operator in \textbf{infixed} form.
+    \item The \textit{zero-case} for our specific type (int $\rightarrow$ 0, floats $\rightarrow 0.0$, ...).
+    \item The list of elements that we want to sum.
+\end{itemize}
+Note that this function can be used for summing ints, floats, Strings but even booleans:
+\begin{lstlisting}
+let s3 = sum (fun a b -> a || b) false [false; true; true; false]
+//Result: val s3 : bool = true
+\end{lstlisting}
+With this expression we are performing \textbf{or} through the specified list of booleans. So actually our function doesn't perform only sum, but it performs anything we specify as the $(+)$ parameter (as long as it is type-consistent).
+

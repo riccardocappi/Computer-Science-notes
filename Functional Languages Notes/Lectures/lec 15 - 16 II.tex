@@ -1,0 +1,104 @@
+\chapter{Lec 15-16 Part II - Type checking rule}
+
+\section{Inference logic rule}
+\[
+    \infer{\Gamma \vdash \lambda x.e : \tau_{1} \rightarrow \tau_{2}}{\Gamma, (x:\tau_{1}) \vdash e:\tau_{2}}\]
+The formula above, in the world of logic, is called \textbf{inference logic rule}. Basically, it is an implication from "\textit{up}" to "\textit{down}". It means that the formula above the horizontal line implies the formula below.\newline\newline
+In order to understand this rule, we need to define its terms.
+\subsection{Expressions}
+\label{expr}
+$e$ is an \textbf{expression} defined through a \textbf{BNF} grammar:
+\begin{grammar}
+    <e> ::= <x>
+    \alt <λx.e> 
+    \alt <e e>
+    \alt <Let x = e in e>
+\end{grammar}
+An expression $e$ can either be:
+\begin{itemize}
+    \item A variable name
+    \item A lambda
+    \item An application
+    \item A let binding
+\end{itemize}
+Let's consider the following expression in F\#:
+\begin{lstlisting}[style=FSharpStyle]
+    let m = (1+2+3) 4
+\end{lstlisting}
+The right part of the let binding is correct from the point of view of the syntax (it's an application), but is wrong from the point of view of types. So, a compiler can be seen as a pipeline:
+\begin{enumerate}
+    \item First checks the syntax
+    \item Then understands types (type inference)
+\end{enumerate}
+    
+\subsection{Types}
+A type $\tau$ is defined as a syntactic entity through a BNF grammar:
+\begin{grammar}
+    <τ> ::= <c>
+    \alt <τ ⟶ τ >
+    \alt α
+\end{grammar}
+Where $c$ is a constant type name (e.g. int, float, bool, ...) and $\alpha$ is a \textbf{generic} type variable.
+
+\subsection{The environment $\Gamma$}
+$\Gamma$ is the environment (scope) and is defined as follows:
+\begin{grammar}
+    <Γ> ::= Ø
+    \alt <Γ,(x : τ) >
+\end{grammar}
+Let's consider the following F\# code:
+\begin{lstlisting}[style=FSharpStyle]
+    let f a b c = if a then b c else a
+
+    let myfun x y=
+        let f z = f x y x
+        f 3
+\end{lstlisting}
+Note that when we bind \textit{f} inside \textit{myfun}, since it is not specified the \textbf{rec} keyword, we are referring to the definition of \textit{f} written above \textit{myfun}. So, in order to analyze the type of the nested function \textit{f} defined inside \textit{myfun}, the compiler must have memorized the type of the function \textit{f} defined above \textit{myfun}. In F\# the let binding adds an entry to the scope, but how can we represent this information ? \newline\newline
+The simplest way for representing the scope is a sequence of pairs, where each pair is composed by an identifier and its type. $\Gamma$ can be seen as a function from the set of identifiers $X$ to types:
+\[\Gamma: X \rightarrow \tau\]
+\subsection{Understanding the formula}
+Let's go back to the logic rule mentioned before:
+\[
+    \infer{\Gamma \vdash \lambda x.e : \tau_{1} \rightarrow \tau_{2}}{\Gamma, (x:\tau_{1}) \vdash e:\tau_{2}}\]
+\begin{itemize}
+    \item $\vdash$ means "\textit{deduce}"
+    \item : means "\textit{has type}"
+\end{itemize}
+so, a literal translation of $\Gamma \vdash e : \tau$ would be: "\textit{In a scope $\Gamma$, we deduce that the expression $e$ has type $\tau$}".\newline\newline
+The meaning of the whole formula is the following: Given a lambda $\lambda x.e$ in an environment $\Gamma$, if we extend the scope $\Gamma$ by binding to the parameter $x$ the type $\tau_{1}$ and we deduce that the body $e$ has type $\tau_{2}$, then the lambda must have type $\tau_{1} \rightarrow \tau_{2}$.  Basically, it says that the domain of the lambda is the type of the parameter and the codomain is the type of the body.\newline\newline
+This is a \textbf{type checking} rule because it says what must be true for an expression in order to be valid from the point of view of types, but it doesn't show how to infer types. Type inference shows how to automatically understands types, rather than just assuming them.\newline\newline
+Let's make an example in F\#:
+\begin{lstlisting}[style=FSharpStyle]
+    let r  = fun x -> x 23
+\end{lstlisting}
+The right part of the let binding is a lambda that has an application as body. The type inference understands that:
+\begin{itemize}
+    \item the parameter $x$ has type int $\rightarrow$ 'a
+    \item the expression $e$, that is an application, has type 'a
+\end{itemize}
+Then, by applying the type checking rule, the whole lambda must have type (int $\rightarrow$ 'a) $\rightarrow$ 'a\newline\newline
+It is useful to express the type checking algorithm through a series of logical implications. This is because we want to describe the algorithm in such a way that we can derive some mathematical properties. The most important property that we can derive from this definition is \textbf{soundness}.\newline\newline
+Soundness means that given a program, if the types are correct then the program works (in the sense that run without crashing). Note that, in functional languages, every program is an expression made of multiple let bindings.
+\subsection{Type checking rule for the other expression terms}
+We defined the type-checking rule only for the lambda-term of expressions. Let's write the same rule with respect to application, variable name and let binding terms (according to the definition of expression we gave in section \ref{expr}). 
+\begin{itemize}
+    \item \textbf{Variable name:} 
+    \[ \infer{\Gamma \vdash x : \tau}{ \begin{gathered} x \in domain(\Gamma)\\ \Gamma(x) = \tau \end{gathered}} \]
+    A variable $x$ has type $\tau$ in the scope $\Gamma$ if it is defined in the scope and if $\Gamma$ applied to $x$ produces $\tau$ ($\Gamma$ is a function as we said previously).
+    \item \textbf{Application:} 
+    \[ \infer{\Gamma \vdash e_{1} \, e_{2} : \tau_{2}}{\begin{gathered} \Gamma \vdash e_{1} : \tau_{1} \rightarrow \tau_{2} \\ \Gamma \vdash e_{2} : \tau{1} \end{gathered}}\]
+
+    \item \textbf{Let binding:}
+    \[ \infer{\Gamma \vdash let \, x = e_{1} \, in \, e_{2} : \tau_{2}}{\begin{gathered}
+        \Gamma \vdash e_{1} : \tau_{1}\\
+        \Gamma, (x:\tau_{1}) \vdash e_{2}:\tau_{2}
+    \end{gathered}}\]
+    Let's make an example in F\#:
+    \begin{lstlisting}[style=FSharpStyle]
+        let a=3 in let b = true in a
+    \end{lstlisting}
+    In this example $e_{1} = 3$ and $e_{2} =$ \textit{let b = true in a }. The rule that type checks the binding \textit{let a = 3} is $\Gamma \vdash e_{1}:\tau_{1}$. In our example $\tau_{1}=int \rightarrow e_{1}:int$. Then, we bind \textit{(a:int)} and we add this information to the original scope. By recursively repeating the type-checking for $e_{2}$ in the extended scope, we'll eventually have the environment $\Gamma$ composed by: $\{(a:int), (b:int)\}$ and the variable \textit{a}
+    will be type-checked following the rule mentioned before. 
+\end{itemize}
+

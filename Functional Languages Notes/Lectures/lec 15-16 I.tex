@@ -1,0 +1,101 @@
+\chapter{Lec 15-16 Part I - Type inference in F\#}
+
+\section{Simple type inference algorithm}
+The type inference algorithm automatically understands the type of an expression in a formal language. Let's consider the following F\# functions with their respective types:
+\begin{lstlisting}[style=FSharpStyle]
+    let f a b c = if a then b c else a
+    //val f : a:bool -> b:('a -> bool) -> c:'a -> bool
+    
+    let g x y z = (x, y, z)
+    //val g : x:'a -> y:'b -> z:'c -> 'a * 'b * 'c
+
+    let h x y z = z y x
+    //val h : x:'a -> y:'b -> z:('b -> 'a -> 'c) -> 'c
+\end{lstlisting}
+A simple type inference high-level algorithm could be the following:
+\begin{enumerate}
+    \item Bind unknown types to the parameters ('a, 'b, 'c, ...). We will call these unknown types \textbf{type variables}.
+    \item \textbf{Substitute} each type variable with a concrete type (if possible) according to what is written in the body of the function. Once a concrete type (int, float, bool, ...) is fixed, it doesn't change anymore. If we need to substitute more that one concrete type it means there is an error in the function.
+\end{enumerate}
+For example, if we change the definition of f as follows:
+\begin{lstlisting}[style=FSharpStyle]
+    let f a b c = if a then b c else a+1
+\end{lstlisting}
+it produces an error because \textit{a} was inferred as bool but is used as an int in the \textit{else} branch of the \textit{if-then-else} statement.
+\begin{lstlisting}[style=FSharpStyle]
+    let f a b c = if a+1 > 3 then b c else a
+\end{lstlisting}
+Since the \textit{if-then-else} statement must return the same type in both the branches, the type of the new definition of f is:
+\begin{lstlisting}[style=FSharpStyle]
+    int -> ('a -> int) -> 'a -> int
+\end{lstlisting}
+\begin{itemize}
+    \item \textit{a} has type int
+    \item Also the function \textit{b} produces an int
+\end{itemize}
+In the body of the function g there are no \textbf{constraints} that permit the type inference to substitute any concrete type, so it will remain a polymorphic function with respect to all the parameters.\newline\newline
+Let's insert a constraint in the body of the function g.
+\begin{lstlisting}[style=FSharpStyle]
+    let g x y z = (x-1, y, z)
+\end{lstlisting}
+With this change, the compiler understands that \textit{x} must be an integer (due to the constraint x-1), while y and z remain unknown (polymorphic). Polymorphism arises from not knowing any constraint on a type. \newline\newline
+Now we can define a more detailed pipeline of the type inference algorithm:
+\begin{enumerate}
+    \item Bind unknown types to parameters (type variables)
+    \item Create a list of constraints according to the body of the function
+    \item Check the list of constraints:
+           \begin{enumerate}
+               \item Eliminate trivial constraints
+               \item If two or more constraints for the same type variable are found, produce an error
+           \end{enumerate} 
+    \item Substitute to each type variable a concrete type, according to the constraints list, to find the final type.    
+\end{enumerate}
+Let's make an example:
+\begin{lstlisting}[style=FSharpStyle]
+    let j x = if x then x else x
+\end{lstlisting}
+\begin{enumerate}
+    \item We start by binding unknown types:
+    \begin{lstlisting}[style=FSharpStyle]
+        j: 'a -> 'b
+    \end{lstlisting}
+    \item The \textit{if-then-else} statement requires two constraints:
+        \begin{itemize}
+            \item The guard of the \textit{if} must be a bool
+            \item The two branches must produce the same type
+        \end{itemize}
+    So the list of constraints becomes:
+    \begin{lstlisting}[style=FSharpStyle]
+        'a -> bool
+        'a -> 'a
+        'b -> 'a
+    \end{lstlisting}
+    By eliminating trivial constraints the list becomes:
+    \begin{lstlisting}[style=FSharpStyle]
+        'a -> bool
+        'b -> 'a
+    \end{lstlisting}
+    Then, we simplify the constraints list:
+    \begin{lstlisting}[style=FSharpStyle]
+        'a -> bool
+        'b -> bool
+    \end{lstlisting}
+    \item Since there are not multiple constraints for the same type variable, we can perform the substitution. The type of j becomes:
+    \begin{lstlisting}[style=FSharpStyle]
+        j: bool -> bool
+    \end{lstlisting}
+    The substitution can be seen as a function from type variables to types:
+    \[ \Theta: \alpha \rightarrow \tau\]
+\end{enumerate}
+Note that if we had written the following expression:
+\begin{lstlisting}[style=FSharpStyle]
+    let j x = if x then x else 2
+\end{lstlisting}
+the constraints list would have been:
+\begin{lstlisting}
+    'a -> bool
+    'a -> int
+    'b -> int
+\end{lstlisting}
+So, the type inference algorithm would have produced an error since there are multiple constraints for the type variable 'a.
+

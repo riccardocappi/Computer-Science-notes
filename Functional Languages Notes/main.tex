@@ -1,0 +1,114 @@
+\documentclass{extbook}
+\usepackage[utf8]{inputenc}
+
+\usepackage{mathtools}
+\usepackage{listings, xcolor}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{proof}
+\usepackage{syntax}
+\usepackage{hyperref}
+\usepackage{tikz-qtree}
+
+\DeclareUnicodeCharacter{03BB}{$\lambda$}
+\DeclareUnicodeCharacter{03C4}{$\tau$}
+\DeclareUnicodeCharacter{03B1}{$\alpha$}
+\DeclareUnicodeCharacter{27F6}{$\rightarrow$}
+\DeclareUnicodeCharacter{0393}{$\Gamma$}
+\DeclareUnicodeCharacter{2205}{$\emptyset$}
+\DeclareUnicodeCharacter{0394}{$\Delta$}
+
+
+\newgeometry{
+left=   1 in,
+bottom= 1.5 in,
+right=  1 in,
+top=    1 in
+}
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{turqusnumbers}{rgb}{0.17,0.57,0.69}
+\definecolor{redstrings}{rgb}{0.5,0,0}
+
+\lstdefinelanguage{FSharp}
+		{morekeywords={let, new, match, with, rec, open, module, namespace, type, of, member, and, for, in, do, begin, end, fun, function, try, mutable, if, then, else,type},
+    keywordstyle=\color{bluekeywords},
+    sensitive=false,
+    morecomment=[l][\color{greencomments}]{///},
+    morecomment=[l][\color{greencomments}]{//},
+    morecomment=[s][\color{greencomments}]{{(*}{*)}},
+    morestring=[b]",
+    stringstyle=\color{redstrings}
+}
+
+\lstdefinelanguage{Java}
+		{morekeywords={for,println, public, extends, private, this, new, abstract},
+    keywordstyle=\color{bluekeywords},
+    sensitive=false,
+    morecomment=[l][\color{greencomments}]{///},
+    morecomment=[l][\color{greencomments}]{//},
+    morecomment=[s][\color{greencomments}]{{(*}{*)}},
+    morestring=[b]",
+    stringstyle=\color{redstrings}
+}
+
+\lstdefinestyle{FSharpStyle}{
+  language=FSharp,
+  aboveskip=3mm,
+  belowskip=6mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  breaklines=true,
+  breakatwhitespace=true
+  tabsize=3
+}
+
+\lstdefinestyle{JavaStyle}{
+language = Java,
+aboveskip=3mm,
+belowskip=6mm,
+showstringspaces=false,
+columns=flexible,
+basicstyle={\small\ttfamily},
+breaklines=true,
+breakatwhitespace=true
+tabsize=3
+}
+
+\tikzset{every tree node/.style={minimum width=2em,draw,circle},
+         blank/.style={draw=none},
+         edge from parent/.style=
+         {draw,edge from parent path={(\tikzparentnode) -- (\tikzchildnode)}},
+         level distance=1.5cm}
+
+\definecolor{mygray}{HTML}{e1e7eb}
+
+\title{Functional Languages Notes}
+\author{Riccardo Cappi}
+\date{January 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Disclaimer}
+These are just my notes that I used to prepare for the exam. So, probably, there will be both spelling and conceptual errors. Feel free to contact me at riccardo.cappi@studenti.unipd.it if you find any errors. This is the github repo where you can find the latex files of the notes: \url{https://github.com/riccardocappi/Computer-Science-notes}\\\\
+Unfortunately the notes for this course are \textbf{incomplete} :(
+
+\tableofcontents
+
+\include{Lectures/lec 09}
+\include{Lectures/lec 10}
+\include{Lectures/lec 11}
+\include{Lectures/lec 12}
+\include{Lectures/lec 13}
+\include{Lectures/lec 14}
+\include{Lectures/lec 15-16 I}
+\include{Lectures/lec 15 - 16 II}
+\include{Lectures/lec 16}
+
+
+\end{document}

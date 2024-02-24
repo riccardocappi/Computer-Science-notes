@@ -1,0 +1,134 @@
+\chapter{Lec 12 - Higher-order functions on trees}
+
+\section{Binary Trees}
+In F\# a binary tree is defined as follows:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree  = Leaf of 'a | Node of 'a tree * 'a tree
+\end{lstlisting}
+As you can see, data are only in the leaves and nodes don't have any information attached.\newline\newline
+If we want to add information also in the nodes, we can use the following definition:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree  = Leaf of 'a | Node of 'a tree * 'a tree * 'a
+\end{lstlisting}
+\section{Map function}
+Let's define the map function for binary trees considering the definition with data only in the leaves.
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree f t = 
+        match t with
+            | Leaf x -> Leaf(f x)
+            | Node (l,r) -> Node (map_tree f l, map_tree f r)
+
+    let tree = Node( Node( Leaf(2), Leaf(4)),Leaf(3))
+    let m = map_tree (fun x -> x*x) tree
+
+    // val map_tree : f:('a -> 'b) -> t:'a tree -> 'b tree
+    // val tree : int tree = Node (Node (Leaf 2, Leaf 4), Leaf 3)
+    // val m : int tree = Node (Node (Leaf 4, Leaf 16), Leaf 9)
+\end{lstlisting}
+The original tree is:\newline
+\begin{tikzpicture}
+    \Tree
+    [.N1  
+        [.N2
+            \edge[]; {2}
+            \edge[]; {4}
+        ]
+        [.3 
+            \edge[blank]; \node[blank]{};
+            \edge[blank]; \node[blank]{};
+        ]
+    ]
+\end{tikzpicture}\newline
+And the map function produces the following new tree:\newline
+\begin{tikzpicture}
+    \Tree
+    [.N1  
+        [.N2
+            \edge[]; {4}
+            \edge[]; {16}
+        ]
+        [.9 
+            \edge[blank]; \node[blank]{};
+            \edge[blank]; \node[blank]{};
+        ]
+    ]
+\end{tikzpicture}\newline
+Basically, each value is mapped to its respective square.\newline\newline
+This function can be defined in many different ways:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree f t = 
+        match t with
+        | Leaf x -> Leaf (f x)
+        | Node (l, r) ->
+            let m = map_tree f   // val m: ('a tree -> 'b tree)
+            Node(m l, m r)
+\end{lstlisting}
+In this case, instead of recursively call map\_tree every time we reach a node, we bind \textit{map\_tree f} to m, using the \textbf{let} keyword, and then we use m to recursively build the new tree.\newline\newline
+We can also \textbf{$\eta$-expand} this binding by adding a parameter t:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree f t = 
+        match t with
+        | Leaf x -> Leaf (f x)
+        | Node (l, r) ->
+            let m t = map_tree f t //val m: ('a tree -> 'b tree)
+            Node(m l, m r)
+\end{lstlisting}
+Note that the parameter t is a \textbf{new} identifier, and it is not the same parameter written in the definition of the function. We could have called it in any way. Redefining variables having the same name is called \textbf{shadowing}. It allows the programmer to \textit{eliminate} the old name locally.\newline\newline
+All these three definitions behave exactly the same. The definitions using the let binding are not so useful because they just add a function that is used only once. Also, the binding is performed every time we reach a Node, that is not very efficient. In order to solve this inefficiency, the compiler performs the optimization process called \textbf{Lambda uplifting} 
+\subsection{Lambda uplifting}
+In order to understand Lambda uplifting, we need to define the map\_tree function using a different curried syntax.\newline\newline
+Writing the function in this way:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree f t
+\end{lstlisting}
+is a \textbf{syntactic sugar} of:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree = fun f -> fun t -> ...
+\end{lstlisting}
+So, we can \textbf{uplift} the binding of m as follows:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree =
+        fun f ->
+            let m t = map_tree f t
+            in fun t ->
+                match t with
+                | Leaf x -> Leaf (f x)
+                | Node (l, r) -> Node (m l, m r)
+\end{lstlisting}
+In this case, the binding is performed only the first time the function is called, and every recursive call will not do the binding again because the \textit{internal} lambda has the function m in its scope.\newline\newline
+This process doesn't have to be done by the programmer, the compiler automatically do it when we define local lambdas in order to perform the least number of bindings.
+
+\section{Sum function}
+Let's define an higher-order function that produces the sum of the elements of a given tree:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec sum_tree (+) t =
+        match t with
+        | Leaf x -> x
+        | Node (l, r) -> sum_tree (+) l + sum_tree (+) r
+
+    //Type: val sum_tree : op_Addition:('a -> 'a -> 'a) -> t:'a tree -> 'a
+\end{lstlisting}
+Note that $(+)$ is a parameter with a "\textit{special}" name and it has the following type:
+\begin{lstlisting}[style = FSharpStyle]
+    'a -> 'a -> 'a
+\end{lstlisting}
+It is an operator that performs the sum between the left sub-tree and the right sub-tree. This operator is defined in curried form and it takes 2 parameters of type 'a and produces a 'a element. Within the scope of the sum\_tree function, we must use the $(+)$ parameter in \textbf{infix} form rather than prefix form. This is because any sequence of non alpha-numeric characters is treated by F\# as an infix name. The reason why we use the name $(+)$ rather than other names is because we want to shadow the \textbf{global} $+$ operator defined for integers. We can pass as this parameter each function that satisfies its types constraints.\newline\newline
+For example, writing the following code:
+\begin{lstlisting}[style = FSharpStyle]
+    let tree = Node( Node( Leaf(2), Leaf(4)),Leaf(3))
+
+    //Using the global + operator to perform the sum
+    let s1 = sum_tree (+) tree
+
+    // val s1 : int = 9
+\end{lstlisting}
+is the same of writing:
+\begin{lstlisting}[style = FSharpStyle]
+    let tree = Node( Node( Leaf(2), Leaf(4)),Leaf(3))
+    let plus a b = a + b
+    //Using the custom function named 'plus' to perform the sum
+    let s1 = sum_tree plus tree
+
+    //val s1 : int = 9
+\end{lstlisting}
+

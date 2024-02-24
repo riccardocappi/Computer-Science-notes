@@ -1,0 +1,96 @@
+\chapter{Lec 14 - Higher-order functions for trees III}
+
+\section{Trees type definition}
+Until now we used binary trees that support data only in the leaves. Let's change the type definition in order to support information attached to nodes. We can do this in many different ways:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree =
+        | Node of 'a * 'a tree * 'a tree
+        | Leaf of 'a
+\end{lstlisting}
+In this case, a node is composed by an element of type 'a (which is the information attached to it) and the two sub-trees. However, with this definition we wouldn't be able to represent dead branches. In fact, each node must always have two sub-trees that can be either another node or a leaf.
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree =
+        | Node of 'a * 'a tree * 'a tree
+        | Leaf of 'a option
+\end{lstlisting}
+With this implementation we can represent a dead branch defining a Leaf of None, but we could even define nodes with two empty leaves. So, this definition allows the programmer to write things that are not in their most simplified form.\newline\newline
+In order to prevent this, we can do the following:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree =
+        | Node of 'a * 'a tree option * 'a tree option
+\end{lstlisting}
+Now the \textbf{Node} data-constructor is a triple composed by:
+\begin{itemize}
+    \item An element of type 'a (information in the node)
+    \item Two 'a tree option elements which represent the left and right sub-trees
+\end{itemize}
+When both the sub-trees are None, we are representing a leaf.\newline\newline
+Let's write in F\# the following tree using this definition:\newline
+\begin{tikzpicture}
+    \Tree
+    [.5  
+        [.6
+            \edge[]; {1}
+            \edge[]; {2}
+        ]
+        [.7
+            \edge[]; {3}
+            \edge[blank]; \node[blank]{};
+        ]
+    ]
+\end{tikzpicture}\newline
+\begin{lstlisting}[style = FSharpStyle]
+    let Leaf x = Some(Node(x, None, None))
+    let tree = Node(5,
+                Some(Node(6, Leaf 1, Leaf 2)),
+                Some(Node(7, Leaf 3, None)))
+\end{lstlisting}
+Note that \textbf{Leaf x} is a function, not a data-constructor. It is just a shorter way to define leaves. The difference between functions and data-constructors is that functions can be used to \textbf{create}, but not for deconstructing (they can't be used to pattern-match).\newline\newline
+We can write trees even in a shorter form by defining the following function:
+\begin{lstlisting}[style = FSharpStyle]
+    let SNode (x, t1, t2) = Some (Node (x, t1, t2))
+    let tree = Node (5, 
+               SNode (6, Leaf 1, Leaf 2), 
+               SNode (7, Leaf 3, None)
+               )
+\end{lstlisting}
+How can we pattern-match this type definition ? We have to specify all possible combinations of node types.
+\begin{lstlisting}[style = FSharpStyle]
+    let rec pretty_tree t = 
+        match t with
+        | Node(x, None, None) -> sprintf "(. %O .)" x
+        | Node(x, Some l, Some r) -> sprintf "(%s %O %s)" (pretty_tree l) x (pretty_tree r)
+        | Node(x, Some l, None) -> sprintf "(%s %O %s)" (pretty_tree l) x "."
+        | Node (x, None, Some r) -> sprintf "(%s %O %s)" "." x (pretty_tree r)
+        
+    let st = pretty_tree tree
+
+    // val st : string = "(((. 1 .) 6 (. 2 .)) 5 ((. 3 .) 7 .))"
+\end{lstlisting}
+The function above is a \textbf{pretty\_print} function for trees, which is a function that produces a string that represents the given tree. Instead of specify all the possibilities in the pattern-match, we can simplify things by defining an additional function. 
+\begin{lstlisting}[style = FSharpStyle]
+    let pretty_opt f o = 
+        match o with 
+        | None -> "."
+        | Some x -> f x
+
+    let rec pretty_tree t =
+        match t with
+        | Node (x, lo, ro) -> 
+            let l = pretty_opt pretty_tree lo
+            let r = pretty_opt pretty_tree ro
+            sprintf "(%s %O %s)"  l x r
+    
+    let st = pretty_tree tree
+
+    // val st : string = "(((. 1 .) 6 (. 2 .)) 5 ((. 3 .) 7 .))"
+\end{lstlisting}
+\section{Record types}
+In F\# we can define the so called \textbf{record types} using the following syntax:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree = {data : 'a;
+                     left : 'a tree option;
+                     right : 'a tree option}
+\end{lstlisting}
+Records are series of \textit{Label : type} separated by a semicolon.
+

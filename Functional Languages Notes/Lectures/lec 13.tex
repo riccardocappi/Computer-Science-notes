@@ -1,0 +1,151 @@
+\chapter{Lec 13 - Higher-order functions for trees II}
+\section{Filter function for trees}
+The \textbf{filter} function takes a predicate and a tree and produces a new tree with the elements that satisfy the predicate.\newline\newline
+Let's say we have the following tree:\newline
+\begin{tikzpicture}
+    \Tree
+    [.N1  
+        [.N2
+            \edge[]; {1}
+            \edge[]; {2}
+        ]
+        [.3 
+            \edge[blank]; \node[blank]{};
+            \edge[blank]; \node[blank]{};
+        ]
+    ]
+\end{tikzpicture}\newline
+and as predicate the lambda $\lambda x.x > 1$. The filter function should produce the tree:\newline
+\begin{tikzpicture}
+    \Tree
+    [.N1  
+        [.N2
+            \edge[blank]; \node[blank]{};
+            \edge[]; {2}
+        ]
+        [.3 
+            \edge[blank]; \node[blank]{};
+            \edge[blank]; \node[blank]{};
+        ]
+    ]
+\end{tikzpicture}\newline
+We defined our tree type as follows:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree  = Leaf of 'a | Node of 'a tree * 'a tree
+\end{lstlisting}
+As you can see, it doesn't support trees with only one child, but we can only represent trees with two children. So, in order to implement the filter function, we need to change the definition and make it more flexible. We can do it in different ways:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree =
+        | Leaf of 'a
+        | Node of 'a tree * 'a tree
+        | OneChild of 'a tree
+\end{lstlisting}
+The code above defines a union type with an additional data-constructor which represent a node with only one child. However, we wouldn't be able to distinguish between left-child and right-child. So, in order to obtain this distinction, we can specify two equivalent data-constructors with different names.
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree =
+        | Leaf of 'a
+        | Node of 'a tree * 'a tree
+        | LeftChild of 'a tree
+        | RightChild of 'a tree
+\end{lstlisting}
+We can get the same result by using \textbf{option} type and defining just 2 data-constructor:
+\begin{lstlisting}[style = FSharpStyle]
+    type 'a tree  = 
+        |Leaf of 'a option
+        |Node of 'a tree * 'a tree
+\end{lstlisting}
+In this case, leaves may or may not contain an information. We express the concept of having only one child by defining binary trees that can have \textbf{empty} leaves.\newline\newline
+Let's define the filter function according to this tree type definition:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec filter_tree p t =
+        match t with
+        | Leaf (Some x) -> if p x then Leaf (Some x) else Leaf None
+        | Leaf None -> Leaf None
+        | Node (l, r) -> Node (filter_tree p l, filter_tree p r)
+
+    let N = Node
+    let L x = Leaf (Some x)
+    let tree = N(N(L 1, L 2), L 3)
+    let t1 = filter_tree (fun x -> x > 1) tree
+
+    // val filter_tree : p:('a -> bool) -> t:'a tree -> 'a tree
+    // val t1 : int tree = Node (Node (Leaf None, Leaf (Some 2)), Leaf (Some 3))
+\end{lstlisting}
+As you can see, t1 is a tree with an empty leaf that represents the tree presented before.
+\subsection{Map and sum functions}
+Let's change the map\_tree and sum\_tree functions according to the new tree type definition:
+\begin{lstlisting}[style = FSharpStyle]
+    let rec map_tree f =
+        let R t = map_tree f t
+        in fun t ->
+            match t with
+            | Leaf None -> Leaf None
+            | Leaf (Some x) -> Leaf (Some(f x))
+            | Node (l, r) -> Node (R l, R r)
+
+    let t2 = map_tree (fun x -> x>1) tree
+    
+    (*val map_tree : f:('a -> 'b) -> ('a tree -> 'b tree)
+      val t2 : bool tree = 
+        Node (Node (Leaf (Some false), Leaf (Some true)), Leaf (Some true))*)
+\end{lstlisting}
+
+\begin{lstlisting}[style = FSharpStyle]
+    let rec sum_tree (+) zero t =
+        match t with
+        | Leaf (Some x) -> x
+        | Leaf None -> zero
+        | Node (l, r) -> (sum_tree (+) zero l) + (sum_tree (+) zero r)
+\end{lstlisting}
+Note that we added the base case of sum (parameter 'zero') that is returned when the function reaches an empty leaf.
+\subsection{Union types and pattern-matching in Java}
+In order to implement the same thing in an object oriented programming language such as Java, we have to simulate union types using objects and inheritance.\newline\newline
+Let's define the map\_tree function in Java:
+\begin{lstlisting}[style = JavaStyle]
+    public abstract class Tree<T> {
+        public abstract <S> Tree<S> map(Function<T, S> f);
+    }
+    public class Leaf<T> extends Tree<T> {
+        @Nullable
+        private T data;
+        public Leaf(T data) {
+            this.data = data;
+        }
+        @Override
+        public <S> Tree<S> map(Function<T, S> f) {
+            return new Leaf<S>(data != null ? f.apply(this.data) : null);
+        }
+    }
+    public class Node<T> extends Tree<T> {
+        private Tree<T> left, right;
+        public Node(Tree<T> l, Tree<T> r) {
+            this.leaf = l;
+            this.right = r;
+        }
+        @Override
+        public <S> Tree<S> map(Function<T, S> f) {
+            return new Node<S>(left.map(f), right.map(f));
+        }
+    }
+\end{lstlisting}
+Basically, the map\_tree higher-order function becomes a method of the super-class \textit{tree}, and we simulate pattern-matching by splitting each implementation of map\_tree in the sub-classes (\textit{Leaf} and \textit{Node}). This solution is called \textbf{visitor pattern}. As you can see, the Java code is more complex and long than the F\# code.
+\section{Fold function for trees}
+\begin{lstlisting}[style = FSharpStyle]
+    let rec fold_tree f z t =
+        match t with
+        | Leaf (Some x) -> f z x
+        | Leaf None -> z
+        | Node (l,r) ->
+            let z' = fold_tree f z l
+            fold_tree f z' r
+\end{lstlisting}
+\begin{itemize}
+    \item When the function reaches a leaf that contains an information, it computes the new state of the accumulator by applying the function f. If the leaf is empty, it just returns the accumulator.
+    \item When the function reaches a node, it forwards the accumulator computed on the left sub-tree to the right sub-tree.
+\end{itemize}
+Note that for lists there are two implementations of the fold function: fold-left and fold-right.
+\begin{itemize}
+    \item \textbf{fold-left: }First computes the accumulator and then performs the recursion step.
+    \item \textbf{fold-right: }Recursively goes to the end of the list and \textit{updates} the accumulator in ascension.
+\end{itemize}
+Since our trees definition doesn't support information in the nodes, we can't distinguish between fold-left and fold-right.

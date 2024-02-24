@@ -1,0 +1,64 @@
+\chapter{Lec 10 - Fold function}
+\section{Iteration}
+In imperative languages (e.g. Java) it exists the \textbf{foreach} statement that permits you to iterate over a sequence.
+\begin{lstlisting}[style = JavaStyle]
+    for (MyType x: e){
+        // do something
+    }
+\end{lstlisting}
+This Java code iterates over the sequence \textbf{e}, that must be a sub-type of \colorbox{mygray}{$Iterable<MyType>$}, and executes the block of code specified within the curly brackets.\newline\newline
+In functional languages iteration works in a different way because there is no foreach statement. Let's define the following \textbf{iter} function in F\#.
+\begin{lstlisting}[style = FSharpStyle]
+    let rec iter f l=
+        match l with
+        |[] -> ()
+        |x::xs -> f x; iter f xs
+        
+    iter(fun n -> printf "%d\n" n)[1..20]   
+\end{lstlisting}
+It applies a function \textbf{f} (in this case a lambda that prints an integer) over each element of a list \textbf{l} \textbf{ignoring} the result of the computation. Basically, the code above prints all the numbers in the list [1..20].\newline\newline
+In F\# if you don't bind the result it means that the expression has no result. But how can we represent \textit{"don't having a result"} in a language that must always computes something? Let's look at the type of the function:
+\begin{lstlisting}[style = FSharpStyle]
+    val iter : f:('a -> unit) -> l:'a list -> unit
+\end{lstlisting}
+The type inference expects that \textbf{f} takes something and returns nothing, and as you can see, the function \textbf{f} takes a parameter of type 'a (polymorphic) and returns a new type called \textbf{unit}. It is defined as follows:
+\begin{lstlisting}[style = FSharpStyle]
+    type unit = ()
+\end{lstlisting}
+The type called \textit{unit} has only one data-constructor with \textbf{name} () and it represents the notion of nothingness. Note that it is different from the keyword \textit{void}, for example, in Java. In fact, void is not a type, you can’t declare a variable of type void, and this is because in imperative languages you don't need to always compute something. In functional languages, instead, you can't omit a result. If we look at the printf function used in the previous code, it takes as parameters a format string, a number of additional arguments depending on the format string, and returns \textit{unit}.\newline\newline
+The iter function we defined returns \textit{unit} when it reaches the end of the list. So, since the \textit{unit} type has only one data-constructor, we can pattern-match the result of iter using the \textbf{let} keyword as follows:
+\begin{lstlisting}[style = FSharpStyle]
+    let () = iter(fun n -> printf "%d\n" n)[1..20]
+\end{lstlisting}
+You can use the iter function, already defined in the F\# standard library, to perform operations on lists that don't need a result.
+\subsection{Fold function}
+The \textbf{fold} function traverses a list applying a function \textbf{f} to each element and carrying over an \textbf{accumulator}\footnote{an accumulator is something that stores the result of the previous computation and is forwarded to the next one} that is forwarded to the next element.\newline\newline
+The fold function can be defined as \textbf{fold-left} or \textbf{fold-right}.
+\begin{lstlisting}[style = FSharpStyle]
+    let rec foldR f z l = 
+        match l with
+        | [] -> z
+        | x::xs -> f (foldR f z xs) x
+    
+    let rec foldL f z l =
+        match l with
+        | [] -> z
+        | x :: xs -> foldL f (f z x) xs    
+\end{lstlisting}
+Let's start with the fold-left. It is written in curried form and it takes 3 parameters: \textbf{f, z} and \textbf{l}. It traverses the list \textbf{l} using recursion and, at each recursion step, it updates the value of the accumulator \textbf{z} by applying the function \textbf{f} on the current element of the list (\textbf{x}) and forward it to the next step. This function can be seen as a polymorphic generalization of the foreach statement. The programmer can specify any \textbf{binary} function that processes each element and propagates an accumulator as the second argument.
+
+\begin{lstlisting}[style = FSharpStyle]
+    let r1 = foldL (+) 0 [1..10]
+\end{lstlisting}
+The code above uses the fold-left function to sum the elements of a list of 10 numbers; starting from the initial state of the accumulator (0), it computes the sum between elements storing the result of the previous step in the accumulator that is forwarded to the next recursion step.\newline\newline
+The fold-right version does the same thing, but in reverse order. It first recursively goes at the end of the list. Then, ascending from the recursion, it applies the function \textbf{f} in a reverse order.\newline\newline
+Note that fold-left and fold-right can produce different results on the same list if the function \textbf{f} is not commutative.
+\begin{lstlisting}[style = FSharpStyle]
+    let s1 = foldL (+) "" ["a"; "b"; "c"]
+    let s2 = foldR (+) "" ["a"; "b"; "c"]
+
+    //result
+    val s1 : string = "abc"
+    val s2 : string = "cba"
+\end{lstlisting}
+The (+) operator applied on a list of strings concatenates the elements, so the results are one the reverse of the other.
